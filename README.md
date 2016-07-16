@@ -10,9 +10,24 @@ Simple script to create equirectangular panorama from Samsung Gear 360.
 
 Requirements:
 
-* Linux,
+* Linux, Windows (cygwin), most possibly Mac.
 * [Hugin](http://hugin.sourceforge.net/),
 * [ImageMagick](http://www.imagemagick.org/).
+
+## Installation
+
+### Linux
+
+Use your distributions' package manager to install [Hugin](http://hugin.sourceforge.net/) and [ImageMagick](http://www.imagemagick.org/). Example for Ubuntu:
+
+    apt-get install hugin imagemagick
+
+### Windows
+
+Installation steps:
+
+1. Install [cygwin](https://cygwin.com/install.html), during installation select [ImageMagick](http://www.imagemagick.org/) package.
+2. Install [Hugin](http://hugin.sourceforge.net/) in the default location (it's hardcoded in script).
 
 ## Usage
 
@@ -20,7 +35,7 @@ Usage (example):
 
     ./gear360pano.sh 360_0010.JPG
 
-Output:
+Output (example):
 
     Splitting input image
     Processing input images
