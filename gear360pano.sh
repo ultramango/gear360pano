@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # This is a small script to stitch panorama images produced
 # by Samsung Gear360
