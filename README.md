@@ -53,6 +53,11 @@ Few remarks:
   5. Optimise, preview and create.
   6. Use masks if you still have problems with bad stitching.
 
+# Links
+
+Links:
+* easy to setup HTML panorama viewer [Pannellum](https://pannellum.org/).
+
 # TODOs
 
 Few things that could be improved:
