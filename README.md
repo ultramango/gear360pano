@@ -75,7 +75,8 @@ Few remarks:
 # Links
 
 Links:
-* easy to setup HTML panorama viewer [Pannellum](https://pannellum.org/).
+* easy to setup HTML panorama viewer [Pannellum](https://pannellum.org/),
+* some notes on [Gear360 firmware](https://github.com/ultramango/gear360reveng).
 
 # TODOs
 
