@@ -10,10 +10,10 @@
 # - could add some parameters for output, jpeg quality, etc.
 
 PTOTMPL="gear360tmpl.pto"
-SPLITNAME="split-"
 OUTTMPNAME="out"
-OUTNAME=`basename "${1%.*}"`_pano.jpg
+OUTNAME=$2
 JPGQUALITY=97
+PTOJPGFILENAME="dummy.jpg"
 
 # Clean-up function
 function clean_up {
@@ -28,7 +28,7 @@ function run_command {
     "$@"
     local status=$?
     if [ $status -ne 0 ]; then
-        echo "Error when running $1" >&2
+        echo "Error while running $1" >&2
         clean_up
         exit 1
     fi
@@ -62,34 +62,33 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+# Output name as second argument
+if [ -z "$2" ]; then
+    OUTNAME=`basename "${1%.*}"`_pano.jpg
+fi
+
 # OS check, custom settings for various OSes
 os_check
 
 # Check if we have the software to do it (Hugin, ImageMagick)
 # http://stackoverflow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
-type convert >/dev/null 2>&1 || { echo >&2 "I require ImageMagick but it's not installed. Aborting."; exit 1; }
-type nona >/dev/null 2>&1 || { echo >&2 "I require Hugin but it's not installed. Aborting."; exit 1; }
+type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it's not installed. Aborting."; exit 1; }
 
 # Create temporary directory locally to stay compatible with other OSes
 TEMPDIR=`mktemp -d -p .`
 STARTTS=`date +%s`
 
-# Split the panorama in two
-echo Splitting input image
-cmd="convert $1 -compress lzw -crop 50%x100% +repage +adjoin $TEMPDIR/${SPLITNAME}%d.tif"
-run_command $cmd
-
-# Stitch panorama
-echo Processing input images
+# Stitch panorama (same file twice as input)
+echo "Processing input images (nona)"
 cmd="nona -o $TEMPDIR/$OUTTMPNAME \
      -m TIFF_m \
      -z LZW \
      $PTOTMPL \
-     $TEMPDIR/${SPLITNAME}0.tif \
-     $TEMPDIR/${SPLITNAME}1.tif"
+     $1 \
+     $1"
 run_command $cmd
 
-echo Stiching input images
+echo "Stiching input images (enblend)"
 cmd="enblend -o $OUTNAME \
      --compression=jpeg:$JPGQUALITY \
      $TEMPDIR/${OUTTMPNAME}0000.tif \
