@@ -9,6 +9,7 @@ GOTO :CMDSCRIPT
 # Process is simple: cut in half and stitch using Hugin template.
 #
 # TODOs:
+# - Windows command script part could have a better coding style
 # - vignetting correction is not there yet
 # - could add some parameters for output, jpeg quality, etc.
 #
@@ -155,12 +156,17 @@ set HUGINPATH1=%HUGINPATH2%
 :: Execute commands (as simple as it is)
 echo Processing input images (nona)
 "%HUGINPATH1%/nona.exe" -o %TEMP%/%OUTTMPNAME% -m TIFF_m -z LZW %PTOTMPL% %1 %1
+if %ERRORLEVEL% EQU 1 GOTO NONAERROR
+
 echo Stitching input images (enblend)
 "%HUGINPATH1%/enblend.exe" -o %OUTNAME% --compression=jpeg:%JPGQUALITY% %TEMP%/%OUTTMPNAME%0000.tif %TEMP%/%OUTTMPNAME%0001.tif
+if %ERRORLEVEL% EQU 1 GOTO ENBLENDERROR
+
 echo Panorama written to %OUTNAME%
 goto END
 
 :NOARGS
+
 echo Small script to stitch raw panorama files.
 echo Raw meaning two fisheye images side by side.
 echo Script originally writen for Samsung Gear 360.
@@ -173,8 +179,18 @@ echo output parameter is optional
 goto END
 
 :NOHUGIN
+
 echo Hugin is not installed or installed in non-standard directory
 goto END
 
-:END
+:NONAERROR
 
+echo Nona failed, panorama not created
+goto END
+
+:ENBLENDERROR
+
+echo Enblend failed, panorama not created
+goto END
+
+:END
