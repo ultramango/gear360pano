@@ -8,7 +8,7 @@ Simple script to create equirectangular panorama from Samsung Gear 360.
 
 Latest Changes:
 
-- 2016-07-31: removed dependency on ImageMagick, optinal second parameter as output filename.
+- 2016-07-31: removed dependency on ImageMagick, optional second parameter as output filename.
 
 # Usage
 
@@ -75,7 +75,8 @@ Few remarks:
 # Links
 
 Links:
-* easy to setup HTML panorama viewer [Pannellum](https://pannellum.org/).
+* easy to setup HTML panorama viewer [Pannellum](https://pannellum.org/),
+* some notes on [Gear360 firmware](https://github.com/ultramango/gear360reveng).
 
 # TODOs
 
