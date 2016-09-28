@@ -6,8 +6,6 @@ GOTO :CMDSCRIPT
 # This is a small script to stitch panorama images produced
 # by Samsung Gear360
 #
-# Process is simple: cut in half and stitch using Hugin template.
-#
 # TODOs:
 # - Windows command script part could have a better coding style
 # - vignetting correction is not there yet
