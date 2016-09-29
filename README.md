@@ -77,7 +77,7 @@ Few remarks:
 
 Most probably applying panorama template from this project seem not to work there's another way to do it:
 
-1. Rename your panorama to dummy.jpg (the one coming from Gear360) or change filename present in template ```.pto``` file from this project.
+1. Rename your panorama to ```dummy.jpg``` (the one coming from Gear360) or change filename present in template ```.pto``` file from this project.
 2. Start Hugin and open ```gear360tmpl.pto``` file (it will open your panorama file).
 
 Now you can do whatever you want with panorama, just be aware that points and vertical/horizontal lines are from my original panorama file. Points should match, but horizontal/vertical lines will not.
