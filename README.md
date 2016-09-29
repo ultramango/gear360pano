@@ -68,10 +68,19 @@ Few remarks:
 
 * ensure that you have something like 150 MB of free disk space for intermediate files. If you're tight on disk space, switch to png format, but the processing time increases to ~90 seconds on my machine,
 * on my machine (Intel i7, 12 GB memory) it takes ~16 seconds to produce the panorama,
-* for better results stitch panorama manually, it should be possible to use template file from this project (unfortunatelly applying ```.pto``` template doesn't seem to work in Hugin, a bug?),
+* for better results stitch panorama manually, it should be possible to use template file from this project,
 * script might contain bugs, most possibly running script from weird directories (symbolic links, spaces in paths) or giving image from as weird directory location,
 * script might not support some exotic interpreters or not work on some older Windows versions. On Linux it should work with bash and zsh,
 * script has Unix line endings.
+
+# Manual Panorama Adjustments
+
+Most probably applying panorama template from this project seem not to work there's another way to do it:
+
+1. Rename your panorama to dummy.jpg (the one coming from Gear360) or change filename present in template ```.pto``` file from this project.
+2. Start Hugin and open ```gear360tmpl.pto``` file (it will open your panorama file).
+
+Now you can do whatever you want with panorama, just be aware that points and vertical/horizontal lines are from my original panorama file. Points should match, but horizontal/vertical lines will not.
 
 # Links
 
