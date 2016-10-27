@@ -105,11 +105,11 @@ for i in $FRAMESTEMPDIR/*.jpg; do
     echo Frame: $i
     OUTFILENAME=`basename $i`
     cmd="/bin/bash ./gear360pano.cmd $i $OUTTEMPDIR/$OUTFILENAME"
-	run_command $cmd
+        run_command $cmd
 done
 
 echo "Recoding the video..."
-cmd="ffmpeg -f image2 -r 1 -i \"$OUTTEMPDIR/$IMAGETMPL\" -r 30 -s 3840:1920 -vcodec libx264 $OUTNAME"
+cmd="ffmpeg -f image2 -i $OUTTEMPDIR/$IMAGETMPL -r 30 -s 3840:1920 -vcodec libx264 $OUTNAME"
 run_command $cmd
         
 # Remove temporary directories
