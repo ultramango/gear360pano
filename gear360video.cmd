@@ -17,36 +17,39 @@ GOTO :CMDSCRIPT
 ################################ Linux part here
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
-# Or dirname `dirname $0`
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DIR=$(dirname `which $0`)
 
 # Clean-up function
-function clean_up {
+clean_up() {
     echo "Removing temporary directories..."
-    if [ -d "FRAMESTMPDIR" ]; then
-        rm -rf "FRAMESTMPDIR"
+    if [ -d "$FRAMESTMPDIR" ]; then
+        rm -rf "$FRAMESTMPDIR"
     fi
-    if [ -d "OUTTEMPDIR" ]; then
-        rm -rf "OUTTEMPDIR"
+    if [ -d "$OUTTEMPDIR" ]; then
+        rm -rf "$OUTTEMPDIR"
     fi
 }
 
 # Function to check if a command fails
 # http://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
-function run_command {
+run_command() {
     "$@"
     local status=$?
     if [ $status -ne 0 ]; then
         echo "Error while running $1" >&2
+        if [ $1 != "notify-send" ]; then 
+           # Display error in a nice graphical popup if available
+           run_command notify-send "Error while running $1"
+        fi 
         clean_up
         exit 1
     fi
     return $status
 }
 
-# Do stuff to make this thing run on various operating systems
+# Do stuff to make this thing run on various POSIX operating systems
 # http://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
-function os_check {
+os_check() {
     case "$(uname -s)" in
 
     Darwin)
@@ -67,17 +70,20 @@ function os_check {
 
 # Check argument(s)
 if [ -z "$1" ]; then
-    echo "Small script to stitch video panorama files."
+    echo "Small script to stitch panoramic videos."
     echo -e "Script originally writen for Samsung Gear 360.\n"
     echo -e "Usage:\n$0 inputdir [outputfile]\n"
-    echo "Where inputfile is a panorama file from camera,"
+    echo "Where inputfile is a panoramic video file,"
     echo "output parameter is optional."
+    run_command notify-send "Please provide an input file."
+    sleep 2
     exit 1
 fi
 
 # Output name as second argument
 if [ -z "$2" ]; then
-    OUTNAME=`basename "${1%.*}"`_pano.mp4
+    # If invoked by nautilus open-with, we need to remember the proper directory in the outname
+    OUTNAME=`dirname "$1"`/`basename "${1%.*}"`_pano.mp4
     echo "DEBUG: output filename: $OUTNAME"
 fi
 
@@ -89,28 +95,42 @@ os_check
 type ffmpeg >/dev/null 2>&1 || { echo >&2 "ffmpeg required but it's not installed. Aborting."; exit 1; }
 # TODO: add check for gear360pano.cmd script
 
-# Create temporary directory locally to stay compatible with other OSes
+# On some systems not using '-p .' (temp in current dir) might cause problems
 FRAMESTEMPDIR=`mktemp -d -p .`
-OUTTEMPDIR=`mktemp -d -p .`
+OUTTEMPDIR=`mktemp -d`
 IMAGETMPL="image%05d.jpg"
+TMPAUDIO="tmpaudio.aac"
+TMPVIDEO="tmpvideo.mp4"
 STARTTS=`date +%s`
 
-# Stitch panorama (same file twice as input)
-echo "Extracting frames from video (this might take a while..."
-cmd="ffmpeg -i $1 -vf scale=7776:3888 $FRAMESTEMPDIR/$IMAGETMPL"
-run_command $cmd
+# Extract frames from video
+# TODO: currently frames are upscaled, use dedicated .pto file
+run_command notify-send 'Starting panoramic video stitching...'
+echo "Extracting frames from video (this might take a while)..."
+run_command ffmpeg -y -i "$1" -vf scale=7776:3888 "$FRAMESTEMPDIR/$IMAGETMPL"
 
+# Stitch frames
 echo "Stitching frames..."
 for i in $FRAMESTEMPDIR/*.jpg; do
     echo Frame: $i
     OUTFILENAME=`basename $i`
-    cmd="/bin/bash ./gear360pano.cmd $i $OUTTEMPDIR/$OUTFILENAME"
-        run_command $cmd
+    run_command "/bin/bash" "$DIR/gear360pano.cmd" "$i" "$OUTTEMPDIR/$OUTFILENAME"
 done
 
+# Put stitched frames together
 echo "Recoding the video..."
-cmd="ffmpeg -f image2 -i $OUTTEMPDIR/$IMAGETMPL -r 30 -s 3840:1920 -vcodec libx264 $OUTNAME"
-run_command $cmd
+run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPL" -r 30 -s 3840:1960 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
+
+#use this for medium size
+#run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPL" -r 30 -s 1920:960 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
+
+echo "Extracting audio..."
+run_command notify-send "Extracting audio..."
+run_command ffmpeg -y -i "$1" -vn -acodec copy "$OUTTEMPDIR/$TMPAUDIO"
+
+echo "Merging audio..."
+run_command notify-send "Merging audio..."
+run_command ffmpeg -y -i "$OUTTEMPDIR/$TMPVIDEO" -i "$OUTTEMPDIR/$TMPAUDIO" -c:v copy -c:a aac -strict experimental "$OUTNAME"
         
 # Remove temporary directories
 clean_up
@@ -119,7 +139,7 @@ clean_up
 ENDTS=`date +%s`
 RUNTIME=$((ENDTS-STARTTS))
 echo Video written to $OUTNAME, took: $RUNTIME s
-
+run_command notify-send "'Conversion complete. Video written to $OUTNAME, took: $RUNTIME s'"
 exit 0
 
 ################################ Windows part here
@@ -129,21 +149,18 @@ exit 0
 set FFMPEGPATH=c:/Program Files/ffmpeg/bin
 set FRAMESTEMPDIR=frames
 set OUTTEMPDIR=frames_stitched
-:: %% is an escape character
+:: %% is an escape character (note: this will fail on wine's cmd.exe)
 set IMAGETMPL=image%%05d.jpg
+set TMPAUDIO=tmpaudio.aac
+set TMPVIDEO=tmpvideo.mp4
 
 :: Check arguments
 IF [%1] == [] GOTO NOARGS
 
-:: Check if second argument present, if not, set some default for output filename
-IF NOT [%2] == [] GOTO SETNAMEOK
-set OUTNAME="%~n1_pano.mp4"
-
 :SETNAMEOK
 
-:: Where's enblend? Prefer 64 bits
+:: Check ffmpeg...
 if exist "%FFMPEGPATH%/ffmpeg.exe" goto FFMPEGOK
-:: 64 bits not found? Check x86
 goto NOFFMPEG
 
 :FFMPEGOK
@@ -154,7 +171,7 @@ mkdir %OUTTEMPDIR%
 
 :: Execute commands (as simple as it is)
 echo Converting video to images...
-"%FFMPEGPATH%/ffmpeg.exe" -i %1 -vf scale=7776:3888 %FRAMESTEMPDIR%/%IMAGETMPL%
+"%FFMPEGPATH%/ffmpeg.exe" -y -i %1 -vf scale=7776:3888 %FRAMESTEMPDIR%/%IMAGETMPL%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 :: Stitching
@@ -162,11 +179,29 @@ echo Stitching frames...
 for %%f in (%FRAMESTEMPDIR%/*.jpg) do (
 :: For whatever reason (this has to be at the beginning of the line!)
   echo Processing frame %FRAMESTEMPDIR%\%%f
-:: There should be some error checking
+:: TODO: There should be some error checking
   call gear360pano.cmd %FRAMESTEMPDIR%\%%f %OUTTEMPDIR%\%%f
 )
 
-"%FFMPEGPATH%/ffmpeg.exe" -f image2 -i %OUTTEMPDIR%/%IMAGETMPL% -r 30 -s 3840:1920 -vcodec libx264 %OUTNAME%
+echo "Reencoding video..."
+"%FFMPEGPATH%/ffmpeg.exe" -y -f image2 -i %OUTTEMPDIR%/%IMAGETMPL% -r 30 -s 3840:1920 -vcodec libx264 %OUTTEMPDIR%/%TMPVIDEO%
+if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
+
+echo "Extracting audio..."
+"%FFMPEGPATH%/ffmpeg.exe" -y -i %1 -vn -acodec copy %OUTTEMPDIR%/%TMPAUDIO%
+if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
+
+echo "Merging audio..."
+
+:: Check if second argument present, if not, set some default for output filename
+:: This is here, because for whatever reason OUTNAME gets overriden by
+:: the last iterated filename if this is at the beginning (for loop is buggy?)
+if not [%2] == [] goto SETNAMEOK
+set OUTNAME="%~n1_pano.mp4"
+
+:SETNAMEOK
+
+"%FFMPEGPATH%/ffmpeg.exe" -y -i %OUTTEMPDIR%/%TMPVIDEO% -i %OUTTEMPDIR%/%TMPAUDIO% -c:v copy -c:a aac -strict experimental %OUTNAME%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 :: Clean-up (f - force, read-only & dirs, q - quiet)
@@ -191,18 +226,13 @@ goto END
 
 :NOFFMPEG
 
-echo ffmpeg is found in %FFMPEGPATH%, download from: https://ffmpeg.zeranoe.com/builds/ and
-echo unpack to program files directory
+echo ffmpeg was not found in %FFMPEGPATH%, download from: https://ffmpeg.zeranoe.com/builds/
+echo and unpack to program files directory
 goto END
 
 :FFMPEGERROR
 
 echo ffmpeg failed, video not created
-goto END
-
-:STITCHINGERROR
-
-echo Stitching failed, video not created
 goto END
 
 :END
