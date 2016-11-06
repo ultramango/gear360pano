@@ -17,9 +17,7 @@ GOTO :CMDSCRIPT
 ################################ Linux part here
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
-# Or dirname `dirname $0`
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
+DIR=$(dirname `which $0`)
 PTOTMPL="$DIR/gear360tmpl.pto"
 OUTTMPNAME="out"
 OUTNAME=$2
@@ -27,28 +25,32 @@ JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"
 
 # Clean-up function
-function clean_up {
+clean_up() {
     if [ -d "$TEMPDIR" ]; then
-        rm -rf "$TEMPDIR"
+      rm -rf "$TEMPDIR"
     fi
 }
 
 # Function to check if a command fails
 # http://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
-function run_command {
+run_command() {
     "$@"
     local status=$?
     if [ $status -ne 0 ]; then
         echo "Error while running $1" >&2
+        if [ $1 != "notify-send" ]; then 
+           # Display error in a nice graphical popup if available
+           run_command notify-send "Error while running $1"
+        fi 
         clean_up
         exit 1
     fi
     return $status
 }
 
-# Do stuff to make this thing run on various operating systems
+# Do stuff to make this thing run on various POSIX operating systems
 # http://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
-function os_check {
+os_check() {
     case "$(uname -s)" in
 
     Darwin)
@@ -80,7 +82,8 @@ fi
 
 # Output name as second argument
 if [ -z "$2" ]; then
-    OUTNAME=`basename "${1%.*}"`_pano.jpg
+    #The output needs to be done in the folder of the original file if used via nautlius open-with
+    OUTNAME=`dirname "$1"`/`basename "${1%.*}"`_pano.jpg
 fi
 
 # OS check, custom settings for various OSes
@@ -91,27 +94,30 @@ os_check
 type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it's not installed. Aborting."; exit 1; }
 
 # Create temporary directory locally to stay compatible with other OSes
-TEMPDIR=`mktemp -d -p .`
-STARTTS=`date +%s`
+# Not using '-p .' might cause some problems on non-unix systems (cygwin?)
+TEMPDIR=`mktemp -d`
 
+STARTTS=`date +%s`
 # Stitch panorama (same file twice as input)
 echo "Processing input images (nona)"
-cmd="nona -o $TEMPDIR/$OUTTMPNAME \
-     -m TIFF_m \
-     -z LZW \
-     $PTOTMPL \
-     $1 \
-     $1"
-run_command $cmd
+# We need to use run_command with many parameters, or $1 doesn't get
+# quoted correctly and we cannot use filenames with spaces
+run_command  "nona" "-o" "$TEMPDIR/$OUTTMPNAME" \
+             "-m" "TIFF_m" \
+             "-z" "LZW" \
+             $PTOTMPL \
+             "$1" \
+             "$1"
 
 echo "Stitching input images (enblend)"
-cmd="enblend -o $OUTNAME \
-     --compression=jpeg:$JPGQUALITY \
-     $TEMPDIR/${OUTTMPNAME}0000.tif \
-     $TEMPDIR/${OUTTMPNAME}0001.tif"
-run_command $cmd
+# We need to use run_command with many parameters,
+# or the directories don't get quoted correctly
+run_command "enblend" "-o" "$OUTNAME" \
+     "--compression=jpeg:$JPGQUALITY" \
+     "$TEMPDIR/${OUTTMPNAME}0000.tif" \
+     "$TEMPDIR/${OUTTMPNAME}0001.tif"
         
-# Remove temporary directory
+# Clean up any files/directories we created on the way
 clean_up
 
 # Inform user about the result
@@ -119,6 +125,8 @@ ENDTS=`date +%s`
 RUNTIME=$((ENDTS-STARTTS))
 echo Panorama written to $OUTNAME, took: $RUNTIME s
 
+# Uncomment this if you don't do videos; otherwise, it is quite annoying
+#notify-send "Panorama written to $OUTNAME, took: $RUNTIME s"
 exit 0
 
 ################################ Windows part here
