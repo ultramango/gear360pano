@@ -8,6 +8,7 @@ Simple script to create equirectangular panorama from Samsung Gear 360.
 
 Latest Changes:
 
+- 2016-11-07: added sound to final video (contribution by OWKenobi), some small fixes.
 - 2016-10-23: experimental (read: slow and not tested well) support for video stiching.
 - 2016-09-29: removed bash dependency on Windows, one script for Linux & Windows, script can be run outside its original/installation directory.
 - 2016-07-31: removed dependency on ImageMagick, optional second parameter as output filename.
@@ -96,7 +97,6 @@ What is wrong (loose notes about the script):
 * video stitching works by converting it to image files, stitching them and then re-coding,
 * to reuse existing panorama template images are being, unnecessarily, upscaled and then downscaled - this slows the whole process
 (I suspect by a significant amount), new panorama template would have to be created to speed things up,
-* audio is not there yet (copy stream should do the trick),
 * it might require a lot of disk space (gigabytes or even more) as the long videos will result in many image files, this could be
 optimised by removing files which are no longer needed, also check for left-over directories that might have not been removed,
 * possibly [GNU Parallel](https://www.gnu.org/software/parallel/) could be used for Linux for parallel panorama processing:
