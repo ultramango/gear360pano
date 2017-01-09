@@ -76,7 +76,7 @@ Few remarks (not videos):
 
 * ensure that you have something like 150 MB of free disk space for intermediate files. If you're tight on disk space, switch to png format, but the processing time increases to ~90 seconds on my machine,
 * on my machine (Intel i7, 12 GB memory) it takes ~16 seconds to produce the panorama,
-* for better results stitch panorama manually, it should be possible to use template file from this project (unfortunatelly applying ```.pto``` template doesn't seem to work in Hugin, a bug?),
+* for better results stitch panorama manually, it should be possible to use template file from this project,
 * script might contain bugs, most possibly running script from weird directories (symbolic links, spaces in paths) or giving image from as weird directory location,
 * script might not support some exotic interpreters or not work on some older Windows versions. On Linux it should work with bash and zsh,
 * script has Unix line endings.
