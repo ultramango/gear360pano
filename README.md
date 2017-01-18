@@ -8,6 +8,7 @@ Simple script to create equirectangular panorama from Samsung Gear 360.
 
 Latest Changes:
 
+- 2017-01-18: improved Hugin template(s), should not be so distorted; new template for video, should speed up video by factor of two (about), fix video size for Linux in script (was 1940, should be 1920).
 - 2016-11-07: added sound to final video (contribution by OWKenobi), some small fixes.
 - 2016-10-23: experimental (read: slow and not tested well) support for video stiching.
 - 2016-09-29: removed bash dependency on Windows, one script for Linux & Windows, script can be run outside its original/installation directory.
@@ -64,22 +65,22 @@ Output (example for Linux):
     enblend: warning: must fall back to export image without alpha channel
     Panorama written to 360_0010_pano.jpg, took: 16 s
 
-This will produce a file `360_0010_pano.jpg`.
+This will produce a file `360_0010_pano.jpg`. Output filename can be given as a second parameter. 
 
 To process all panorama files in current directory:
 
     for i in 360*.JPG; do ./gear360pano.sh $i; done
 
-Script has some simple error checking routines but don't expect any magic. Script can be run outside of its original directory.
+Script has some simple error checking routines but don't expect any magic.
 
-Few remarks (not videos):
+Few remarks (does not apply for the videos):
 
-* ensure that you have something like 150 MB of free disk space for intermediate files. If you're tight on disk space, switch to png format, but the processing time increases to ~90 seconds on my machine,
-* on my machine (Intel i7, 12 GB memory) it takes ~16 seconds to produce the panorama,
-* for better results stitch panorama manually, it should be possible to use template file from this project,
-* script might contain bugs, most possibly running script from weird directories (symbolic links, spaces in paths) or giving image from as weird directory location,
+* ensure that you have something like 150 MB of free disk space for intermediate files. If you're tight on disk space, switch to png format (change inside the script), but the processing time increases about four times,
+* on Intel i7, 12 GB memory it takes ~16 seconds to produce the panorama,
+* for better results stitch panorama manually: create new project in Hugin, add two times the same (raw) panorama file, then choose from menu "File" and "Apply Template",
+* script might contain bugs, most possibly running script from weird directories (symbolic links, spaces in paths) or giving image from just as weird directory location,
 * script might not support some exotic interpreters or not work on some older Windows versions. On Linux it should work with bash and zsh,
-* script has Unix line endings.
+* script has (should have) Unix line endings.
 
 ### Videos
 
@@ -89,14 +90,11 @@ For videos:
 
 This should produce ```video_pano.mp4``` file, output file can be given as a second argument.
 
-Don't have any expectations for video stitching to work well, it is higly unoptimised (for the sake of simplicity and to have
-something working for now).
+Don't have any expectations for video stitching to work well, it is higly unoptimised but to some degree useable.
 
-What is wrong (loose notes about the script):
+What is/might be wrong (loose notes about the script):
 
 * video stitching works by converting it to image files, stitching them and then re-coding,
-* to reuse existing panorama template images are being, unnecessarily, upscaled and then downscaled - this slows the whole process
-(I suspect by a significant amount), new panorama template would have to be created to speed things up,
 * it might require a lot of disk space (gigabytes or even more) as the long videos will result in many image files, this could be
 optimised by removing files which are no longer needed, also check for left-over directories that might have not been removed,
 * possibly [GNU Parallel](https://www.gnu.org/software/parallel/) could be used for Linux for parallel panorama processing:
@@ -115,4 +113,4 @@ Few things that could be improved:
 
 * included [Hugin](http://hugin.sourceforge.net/) template file is not perfect and bad seams will happen (especially for close objects),
 * there's no vignetting correction, better lens correction could be created,
-* script could have few parameters added like: jpeg quality, panorama template.
+* script could have few parameters added like: jpeg quality, EXIF tags update.
