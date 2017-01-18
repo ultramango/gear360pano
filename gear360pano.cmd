@@ -18,7 +18,7 @@ GOTO :CMDSCRIPT
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
-PTOTMPL="$DIR/gear360tmpl.pto"
+PTOTMPL=$3
 OUTTMPNAME="out"
 OUTNAME=$2
 JPGQUALITY=97
@@ -74,16 +74,22 @@ if [ -z "$1" ]; then
     echo "Small script to stitch raw panorama files."
     echo "Raw meaning two fisheye images side by side."
     echo -e "Script originally writen for Samsung Gear 360.\n"
-    echo -e "Usage:\n$0 inputfile [outputfile]\n"
+    echo -e "Usage:\n$0 inputfile [outputfile] [hugintemplate]\n"
     echo "Where inputfile is a panorama file from camera,"
-    echo "output parameter is optional."
+    echo "output parameter and hugintemplate are optional."
     exit 1
 fi
 
 # Output name as second argument
 if [ -z "$2" ]; then
-    #The output needs to be done in the folder of the original file if used via nautlius open-with
+    # The output needs to be done in the folder of the original file if used via nautlius open-with
     OUTNAME=`dirname "$1"`/`basename "${1%.*}"`_pano.jpg
+fi
+
+# Template to use as third argument
+if [ -z "$3" ]; then
+     # Assume default template
+	 PTOTMPL="$DIR/gear360tmpl.pto"
 fi
 
 # OS check, custom settings for various OSes
@@ -135,7 +141,7 @@ exit 0
 
 set HUGINPATH1=c:/Program Files/Hugin/bin
 set HUGINPATH2=c:/Program Files (x86)/Hugin/bin
-set PTOTMPL="%~dp0/gear360tmpl.pto"
+set PTOTMPL=%3
 set OUTTMPNAME="out"
 set OUTNAME=%2
 set JPGQUALITY=97
@@ -149,6 +155,12 @@ IF NOT [%2] == [] GOTO SETNAMEOK
 set OUTNAME="%~n1_pano.jpg"
 
 :SETNAMEOK
+
+:: Third argument as Hugin template
+IF NOT [%3] == [] GOTO SETTMPLOK
+set PTOTMPL="%~dp0/gear360tmpl.pto"
+
+:SETTMPLOK
 
 :: Where's enblend? Prefer 64 bits
 if exist "%HUGINPATH1%/enblend.exe" goto HUGINOK
@@ -173,15 +185,16 @@ goto END
 
 :NOARGS
 
-echo Small script to stitch raw panorama files.
-echo Raw meaning two fisheye images side by side.
+echo Script to stitch raw panorama files, raw meaning
+echo two fisheye images side by side.
+echo.
 echo Script originally writen for Samsung Gear 360.
 echo.
 echo Usage:
-echo %0 inputfile [outputfile]
+echo %0 inputfile [outputfile] [hugintemplate]
 echo.
 echo Where inputfile is a panorama file from camera,
-echo output parameter is optional
+echo output and hugintemplate are optional
 goto END
 
 :NOHUGIN

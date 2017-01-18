@@ -99,29 +99,29 @@ type ffmpeg >/dev/null 2>&1 || { echo >&2 "ffmpeg required but it's not installe
 FRAMESTEMPDIR=`mktemp -d -p .`
 OUTTEMPDIR=`mktemp -d`
 IMAGETMPL="image%05d.jpg"
+PTOTMPL="gear360video.pto"
 TMPAUDIO="tmpaudio.aac"
 TMPVIDEO="tmpvideo.mp4"
 STARTTS=`date +%s`
 
 # Extract frames from video
-# TODO: currently frames are upscaled, use dedicated .pto file
 run_command notify-send 'Starting panoramic video stitching...'
 echo "Extracting frames from video (this might take a while)..."
-run_command ffmpeg -y -i "$1" -vf scale=7776:3888 "$FRAMESTEMPDIR/$IMAGETMPL"
+run_command ffmpeg -y -i "$1" "$FRAMESTEMPDIR/$IMAGETMPL"
 
 # Stitch frames
 echo "Stitching frames..."
 for i in $FRAMESTEMPDIR/*.jpg; do
     echo Frame: $i
     OUTFILENAME=`basename $i`
-    run_command "/bin/bash" "$DIR/gear360pano.cmd" "$i" "$OUTTEMPDIR/$OUTFILENAME"
+    run_command "/bin/bash" "$DIR/gear360pano.cmd" "$i" "$OUTTEMPDIR/$OUTFILENAME" "$PTOTMPL"
 done
 
 # Put stitched frames together
 echo "Recoding the video..."
-run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPL" -r 30 -s 3840:1960 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
+run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPL" -r 30 -s 3840:1920 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
 
-#use this for medium size
+# Use this for medium size
 #run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPL" -r 30 -s 1920:960 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
 
 echo "Extracting audio..."
@@ -149,6 +149,7 @@ exit 0
 set FFMPEGPATH=c:/Program Files/ffmpeg/bin
 set FRAMESTEMPDIR=frames
 set OUTTEMPDIR=frames_stitched
+set PTOTMPL=gear360video.pto
 :: %% is an escape character (note: this will fail on wine's cmd.exe)
 set IMAGETMPL=image%%05d.jpg
 set TMPAUDIO=tmpaudio.aac
@@ -171,7 +172,7 @@ mkdir %OUTTEMPDIR%
 
 :: Execute commands (as simple as it is)
 echo Converting video to images...
-"%FFMPEGPATH%/ffmpeg.exe" -y -i %1 -vf scale=7776:3888 %FRAMESTEMPDIR%/%IMAGETMPL%
+"%FFMPEGPATH%/ffmpeg.exe" -y -i %1 %FRAMESTEMPDIR%/%IMAGETMPL%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 :: Stitching
@@ -180,7 +181,7 @@ for %%f in (%FRAMESTEMPDIR%/*.jpg) do (
 :: For whatever reason (this has to be at the beginning of the line!)
   echo Processing frame %FRAMESTEMPDIR%\%%f
 :: TODO: There should be some error checking
-  call gear360pano.cmd %FRAMESTEMPDIR%\%%f %OUTTEMPDIR%\%%f
+  call gear360pano.cmd %FRAMESTEMPDIR%\%%f %OUTTEMPDIR%\%%f %PTOTMPL%
 )
 
 echo "Reencoding video..."
@@ -213,8 +214,9 @@ goto END
 
 :NOARGS
 
-echo Small script to stitch raw video panorama files.
-echo Raw meaning two fisheye images side by side.
+echo Script to stitch raw video panorama files, raw
+echo meaning two fisheye images side by side.
+echo.
 echo Script originally writen for Samsung Gear 360.
 echo.
 echo Usage:
