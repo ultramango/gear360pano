@@ -8,7 +8,7 @@ Simple script to create equirectangular panorama from Samsung Gear 360.
 
 Latest Changes:
 
-- 2017-01-25: added EXIF data to output file, cosmetic changes to the file
+- 2017-01-25: added EXIF data to output file, Windows has now command timing, cosmetic changes to the file.
 - 2017-01-18: improved Hugin template(s), should not be so distorted; new template for video, should speed up video by factor of two (about), fix video size for Linux in script (was 1940, should be 1920).
 - 2016-11-07: added sound to final video (contribution by OWKenobi), some small fixes.
 - 2016-10-23: experimental (read: slow and not tested well) support for video stiching.
