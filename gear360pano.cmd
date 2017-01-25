@@ -1,6 +1,6 @@
 :<<"::IGNORE_THIS_LINE"
-@ECHO OFF
-GOTO :CMDSCRIPT
+@echo off
+goto :CMDSCRIPT
 ::IGNORE_THIS_LINE
 
 # This is a small script to stitch panorama images produced
@@ -27,7 +27,7 @@ PTOJPGFILENAME="dummy.jpg"
 # Clean-up function
 clean_up() {
     if [ -d "$TEMPDIR" ]; then
-      rm -rf "$TEMPDIR"
+        rm -rf "$TEMPDIR"
     fi
 }
 
@@ -39,34 +39,13 @@ run_command() {
     if [ $status -ne 0 ]; then
         echo "Error while running $1" >&2
         if [ $1 != "notify-send" ]; then 
-           # Display error in a nice graphical popup if available
-           run_command notify-send "Error while running $1"
+            # Display error in a nice graphical popup if available
+            run_command notify-send "Error while running $1"
         fi 
         clean_up
         exit 1
     fi
     return $status
-}
-
-# Do stuff to make this thing run on various POSIX operating systems
-# http://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
-os_check() {
-    case "$(uname -s)" in
-
-    Darwin)
-        ;;
-
-    Linux)
-        ;;
-
-    CYGWIN*|MINGW32*|MSYS*)
-        # Naive approach, should read Hugin installation
-        # path from registry or something...
-        export PATH=$PATH:"/cygdrive/c/Program Files (x86)/Hugin/bin":"/cygdrive/c/Program Files/Hugin/bin"
-        ;;
-    *)
-        ;;
-    esac
 }
 
 # Check argument(s)
@@ -88,12 +67,9 @@ fi
 
 # Template to use as third argument
 if [ -z "$3" ]; then
-     # Assume default template
-	 PTOTMPL="$DIR/gear360tmpl.pto"
+    # Assume default template
+    PTOTMPL="$DIR/gear360tmpl.pto"
 fi
-
-# OS check, custom settings for various OSes
-os_check
 
 # Check if we have the software to do it (Hugin, ImageMagick)
 # http://stackoverflow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
@@ -119,10 +95,30 @@ echo "Stitching input images (enblend)"
 # We need to use run_command with many parameters,
 # or the directories don't get quoted correctly
 run_command "enblend" "-o" "$OUTNAME" \
-     "--compression=jpeg:$JPGQUALITY" \
-     "$TEMPDIR/${OUTTMPNAME}0000.tif" \
-     "$TEMPDIR/${OUTTMPNAME}0001.tif"
-        
+            "--compression=jpeg:$JPGQUALITY" \
+            "$TEMPDIR/${OUTTMPNAME}0000.tif" \
+            "$TEMPDIR/${OUTTMPNAME}0001.tif"
+
+# TODO: not sure about the tag exclusion list...
+# Note: there's no check as exiftool is needed by Hugin
+echo "Setting EXIF data (exiftool)"
+run_command "exiftool" "-ProjectionType=equirectangular" \
+            "-q" \
+            "-m" \
+            "-TagsFromFile" "$1" \
+            "-exif:all" \
+            "--FocalLength" \
+            "--FieldOfView" \
+            "--ThumbnailImage" \
+            "--PreviewImage" \
+            "--EncodingProcess" \
+            "--YCbCrSubSampling" \
+            "--Compression" \
+            "$OUTNAME"
+
+# Problems with "-delete_original!", manually remove the file
+rm ${OUTNAME}_original
+
 # Clean up any files/directories we created on the way
 clean_up
 
@@ -139,6 +135,9 @@ exit 0
 
 :CMDSCRIPT
 
+:: http://stackoverflow.com/questions/673523/how-to-measure-execution-time-of-command-in-windows-command-line
+set start=%time%
+
 set HUGINPATH1=c:/Program Files/Hugin/bin
 set HUGINPATH2=c:/Program Files (x86)/Hugin/bin
 set PTOTMPL=%3
@@ -148,16 +147,16 @@ set JPGQUALITY=97
 set PTOJPGFILENAME="dummy.jpg"
 
 :: Check arguments
-IF [%1] == [] GOTO NOARGS
+if [%1] == [] goto NOARGS
 
 :: Check if second argument present, if not, set some default for output filename
-IF NOT [%2] == [] GOTO SETNAMEOK
+if not [%2] == [] goto SETNAMEOK
 set OUTNAME="%~n1_pano.jpg"
 
 :SETNAMEOK
 
 :: Third argument as Hugin template
-IF NOT [%3] == [] GOTO SETTMPLOK
+if not [%3] == [] goto SETTMPLOK
 set PTOTMPL="%~dp0/gear360tmpl.pto"
 
 :SETTMPLOK
@@ -174,13 +173,41 @@ set HUGINPATH1=%HUGINPATH2%
 :: Execute commands (as simple as it is)
 echo Processing input images (nona)
 "%HUGINPATH1%/nona.exe" -o %TEMP%/%OUTTMPNAME% -m TIFF_m -z LZW %PTOTMPL% %1 %1
-if %ERRORLEVEL% EQU 1 GOTO NONAERROR
+if %ERRORLEVEL% EQU 1 goto NONAERROR
 
 echo Stitching input images (enblend)
 "%HUGINPATH1%/enblend.exe" -o %OUTNAME% --compression=jpeg:%JPGQUALITY% %TEMP%/%OUTTMPNAME%0000.tif %TEMP%/%OUTTMPNAME%0001.tif
-if %ERRORLEVEL% EQU 1 GOTO ENBLENDERROR
+if %ERRORLEVEL% EQU 1 goto ENBLENDERROR
 
-echo Panorama written to %OUTNAME%
+:: Check if we have exiftool...
+echo Setting EXIF data (exiftool)
+"%HUGINPATH1%/exiftool.exe" -ProjectionType=equirectangular -m -q -TagsFromFile %1 -exif:all --FocalLength --FieldOfView --ThumbnailImage --PreviewImage --EncodingProcess --YCbCrSubSampling --Compression %OUTNAME%
+if %ERRORLEVEL% EQU 1 echo Setting EXIF failed, ignoring
+
+:: There are problems with -delete_original in exiftool, manually remove the file
+del %OUTNAME%_original
+
+:: Time calculation
+set end=%time%
+set options="tokens=1-4 delims=:.,"
+for /f %options% %%a in ("%start%") do set start_h=%%a&set /a start_m=100%%b %% 100&set /a start_s=100%%c %% 100&set /a start_ms=100%%d %% 100
+for /f %options% %%a in ("%end%") do set end_h=%%a&set /a end_m=100%%b %% 100&set /a end_s=100%%c %% 100&set /a end_ms=100%%d %% 100
+
+set /a hours=%end_h%-%start_h%
+set /a mins=%end_m%-%start_m%
+set /a secs=%end_s%-%start_s%
+set /a ms=%end_ms%-%start_ms%
+if %ms% lss 0 set /a secs = %secs% - 1 & set /a ms = 100%ms%
+if %secs% lss 0 set /a mins = %mins% - 1 & set /a secs = 60%secs%
+if %mins% lss 0 set /a hours = %hours% - 1 & set /a mins = 60%mins%
+if %hours% lss 0 set /a hours = 24%hours%
+if 1%ms% lss 100 set ms=0%ms%
+
+:: mission accomplished
+set /a totalsecs = %hours%*3600 + %mins%*60 + %secs%
+
+echo Panorama written to %OUTNAME%, took: %totalsecs% s
+
 goto END
 
 :NOARGS
@@ -204,12 +231,12 @@ goto END
 
 :NONAERROR
 
-echo Nona failed, panorama not created
+echo nona failed, panorama not created
 goto END
 
 :ENBLENDERROR
 
-echo Enblend failed, panorama not created
+echo enblend failed, panorama not created
 goto END
 
 :END
