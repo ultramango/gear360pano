@@ -54,23 +54,24 @@ Open console or command line (Win key + R then ```cmd.exe```), go to directory w
 
 Usage (example):
 
-    ./gear360pano.cmd 360_0010.JPG
+    gear360pano.cmd 360_0001.JPG
 
-Output (example for Linux):
+Output (example for Windows):
 
-    Processing input images (nona)
-    Stiching input images (enblend)
-    enblend: info: loading next image: ./tmp.xdyE0bQFMb/out0000.tif 1/1
-    enblend: info: loading next image: ./tmp.xdyE0bQFMb/out0001.tif 1/1
-    enblend: info: writing final output
-    enblend: warning: must fall back to export image without alpha channel
-    Panorama written to 360_0010_pano.jpg, took: 16 s
+   Processing input images (nona)
+   Stitching input images (enblend)
+   enblend: info: loading next image: C:\Users\noone\AppData\Local\Temp/out0000.tif 1/1
+   enblend: info: loading next image: C:\Users\noone\AppData\Local\Temp/out0001.tif 1/1
+   enblend: info: writing final output
+   enblend: warning: must fall back to export image without alpha channel
+   Setting EXIF data (exiftool)
+   Panorama written to "360_0001_pano.jpg", took: 18 s
 
-This will produce a file `360_0010_pano.jpg`. Output filename can be given as a second parameter. 
+This will produce a file `360_0001_pano.jpg`. Output filename can be given as a second parameter. 
 
-To process all panorama files in current directory:
+To process all panorama files in current directory (Linux):
 
-    for i in 360*.JPG; do ./gear360pano.sh $i; done
+    for i in 360*.JPG; do ./gear360pano.cmd $i; done
 
 Script has some simple error checking routines but don't expect any magic.
 
