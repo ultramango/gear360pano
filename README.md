@@ -8,6 +8,7 @@ Simple script to create equirectangular panorama from Samsung Gear 360.
 
 Latest Changes:
 
+- 2017-02-04: added tutorial how to manually create initial panorama in Hugin, updated template, now it resembles panorama created by Samsung S7 phone (it is horizontally rotated by 180 deg.).
 - 2017-01-25: added EXIF data to output file, Windows has now command timing, cosmetic changes to the file.
 - 2017-01-18: improved Hugin template(s), should not be so distorted; new template for video, should speed up video by factor of two (about), fix video size for Linux in script (was 1940, should be 1920).
 - 2016-11-07: added sound to final video (contribution by OWKenobi), some small fixes.
@@ -58,14 +59,14 @@ Usage (example):
 
 Output (example for Windows):
 
-   Processing input images (nona)
-   Stitching input images (enblend)
-   enblend: info: loading next image: C:\Users\noone\AppData\Local\Temp/out0000.tif 1/1
-   enblend: info: loading next image: C:\Users\noone\AppData\Local\Temp/out0001.tif 1/1
-   enblend: info: writing final output
-   enblend: warning: must fall back to export image without alpha channel
-   Setting EXIF data (exiftool)
-   Panorama written to "360_0001_pano.jpg", took: 18 s
+    Processing input images (nona)
+    Stitching input images (enblend)
+    enblend: info: loading next image: C:\Users\noone\AppData\Local\Temp/out0000.tif 1/1
+    enblend: info: loading next image: C:\Users\noone\AppData\Local\Temp/out0001.tif 1/1
+    enblend: info: writing final output
+    enblend: warning: must fall back to export image without alpha channel
+    Setting EXIF data (exiftool)
+    Panorama written to "360_0001_pano.jpg", took: 18 s
 
 This will produce a file `360_0001_pano.jpg`. Output filename can be given as a second parameter. 
 
