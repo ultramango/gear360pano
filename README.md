@@ -103,6 +103,12 @@ optimised by removing files which are no longer needed, also check for left-over
 ```ls *.jpeg | parallel -j+0 --eta '../../gear360pano.sh {} ../stitched/{}'```. But then, Hugin already makes good use of
 the cores.
 
+# Tutorial
+
+This video shows how to create an initial (no proper stitching) panorama file from one double fisheye photos:
+
+[![Panorama from double fisheye photo](http://img.youtube.com/vi/QKQGT8VUN8g/0.jpg)](http://www.youtube.com/watch?v=QKQGT8VUN8g "Panorama from double fisheye photo")
+
 # Links
 
 Links:
