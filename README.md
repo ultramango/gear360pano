@@ -2,7 +2,7 @@
 
 Simple script to create equirectangular panorama from Samsung Gear 360.
 
-![Samsung Gear 360](http://www.samsung.com/us/explore/gear-360/assets/images/gear360.jpg)
+![Samsung Gear 360](gear360.jpg)
 
 # Latest Changes
 
