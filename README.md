@@ -8,7 +8,7 @@ Simple script to create equirectangular panorama from Samsung Gear 360.
 
 Latest Changes:
 
-- 2017-03-17: added compatibility with Google Photos.
+- 2017-03-17: added compatibility with Google Photos (contribution by Ry0 and ftoledo).
 - 2017-02-04: added tutorial how to manually create initial panorama in Hugin, updated template, now it resembles panorama created by Samsung S7 phone (it is horizontally rotated by 180 deg.).
 - 2017-01-25: added EXIF data to output file, Windows has now command timing, cosmetic changes to the file.
 - 2017-01-18: improved Hugin template(s), should not be so distorted; new template for video, should speed up video by factor of two (about), fix video size for Linux in script (was 1940, should be 1920).
