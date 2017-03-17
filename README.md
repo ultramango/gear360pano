@@ -8,6 +8,7 @@ Simple script to create equirectangular panorama from Samsung Gear 360.
 
 Latest Changes:
 
+- 2017-03-17: added compatibility with Google Photos.
 - 2017-02-04: added tutorial how to manually create initial panorama in Hugin, updated template, now it resembles panorama created by Samsung S7 phone (it is horizontally rotated by 180 deg.).
 - 2017-01-25: added EXIF data to output file, Windows has now command timing, cosmetic changes to the file.
 - 2017-01-18: improved Hugin template(s), should not be so distorted; new template for video, should speed up video by factor of two (about), fix video size for Linux in script (was 1940, should be 1920).
@@ -33,7 +34,7 @@ Requirements:
 Use your distributions' package manager to install [Hugin](http://hugin.sourceforge.net/). Example for Ubuntu:
 
     apt-get install hugin
-    
+
 Do the same for ```ffmpeg``` if you want video stitching. It is usually installed on many systems.
 
 Clone or download zip of this project then unpack it somewhere.
@@ -68,7 +69,7 @@ Output (example for Windows):
     Setting EXIF data (exiftool)
     Panorama written to "360_0001_pano.jpg", took: 18 s
 
-This will produce a file `360_0001_pano.jpg`. Output filename can be given as a second parameter. 
+This will produce a file `360_0001_pano.jpg`. Output filename can be given as a second parameter.
 
 To process all panorama files in current directory (Linux):
 
@@ -78,6 +79,7 @@ Script has some simple error checking routines but don't expect any magic.
 
 Few remarks (does not apply for the videos):
 
+* script will support only the highest resolution from the camera (7776x3888),
 * ensure that you have something like 150 MB of free disk space for intermediate files. If you're tight on disk space, switch to png format (change inside the script), but the processing time increases about four times,
 * on Intel i7, 12 GB memory it takes ~16 seconds to produce the panorama,
 * for better results stitch panorama manually: create new project in Hugin, add two times the same (raw) panorama file, then choose from menu "File" and "Apply Template",
