@@ -7,7 +7,6 @@ goto :CMDSCRIPT
 # by Samsung Gear360
 #
 # TODOs:
-# - Windows command script part could have a better coding style
 # - vignetting correction is not there yet
 # - could add some parameters for output, jpeg quality, etc.
 #
@@ -38,10 +37,10 @@ run_command() {
     local status=$?
     if [ $status -ne 0 ]; then
         echo "Error while running $1" >&2
-        if [ $1 != "notify-send" ]; then 
+        if [ $1 != "notify-send" ]; then
             # Display error in a nice graphical popup if available
             run_command notify-send "Error while running $1"
-        fi 
+        fi
         clean_up
         exit 1
     fi
@@ -101,12 +100,21 @@ run_command "enblend" "-o" "$OUTNAME" \
 
 # TODO: not sure about the tag exclusion list...
 # Note: there's no check as exiftool is needed by Hugin
+IMG_WIDTH=7776
+IMG_HEIGHT=3888
 echo "Setting EXIF data (exiftool)"
 run_command "exiftool" "-ProjectionType=equirectangular" \
             "-q" \
             "-m" \
             "-TagsFromFile" "$1" \
             "-exif:all" \
+            "-ExifByteOrder=II" \
+            "-FullPanoWidthPixels=$IMG_WIDTH" \
+            "-FullPanoHeightPixels=$IMG_HEIGHT" \
+            "-CroppedAreaImageWidthPixels=$IMG_WIDTH" \
+            "-CroppedAreaImageHeightPixels=$IMG_HEIGHT" \
+            "-CroppedAreaLeftPixels=0" \
+            "-CroppedAreaTopPixels=0" \
             "--FocalLength" \
             "--FieldOfView" \
             "--ThumbnailImage" \
@@ -172,16 +180,44 @@ set HUGINPATH1=%HUGINPATH2%
 
 :: Execute commands (as simple as it is)
 echo Processing input images (nona)
-"%HUGINPATH1%/nona.exe" -o %TEMP%/%OUTTMPNAME% -m TIFF_m -z LZW %PTOTMPL% %1 %1
+"%HUGINPATH1%/nona.exe" -o %TEMP%/%OUTTMPNAME% ^
+              -m TIFF_m ^
+              -z LZW ^
+              %PTOTMPL% ^
+              %1 ^
+              %1
 if %ERRORLEVEL% EQU 1 goto NONAERROR
 
 echo Stitching input images (enblend)
-"%HUGINPATH1%/enblend.exe" -o %OUTNAME% --compression=jpeg:%JPGQUALITY% %TEMP%/%OUTTMPNAME%0000.tif %TEMP%/%OUTTMPNAME%0001.tif
+"%HUGINPATH1%/enblend.exe" -o %OUTNAME% ^
+              --compression=jpeg:%JPGQUALITY% ^
+              %TEMP%/%OUTTMPNAME%0000.tif ^
+              %TEMP%/%OUTTMPNAME%0001.tif
 if %ERRORLEVEL% EQU 1 goto ENBLENDERROR
 
 :: Check if we have exiftool...
 echo Setting EXIF data (exiftool)
-"%HUGINPATH1%/exiftool.exe" -ProjectionType=equirectangular -m -q -TagsFromFile %1 -exif:all --FocalLength --FieldOfView --ThumbnailImage --PreviewImage --EncodingProcess --YCbCrSubSampling --Compression %OUTNAME%
+set IMG_WIDTH=7776
+set IMG_HEIGHT=3888
+"%HUGINPATH1%/exiftool.exe" -ProjectionType=equirectangular ^
+                            -m ^
+                            -q ^
+                            -TagsFromFile %1 ^
+                            -exif:all ^
+                            -ExifByteOrder=II ^
+                            -FullPanoWidthPixels=%IMG_WIDTH% ^
+                            -FullPanoHeightPixels=%IMG_HEIGHT% ^
+                            -CroppedAreaImageWidthPixels=%IMG_WIDTH% ^
+                            -CroppedAreaImageHeightPixels=%IMG_HEIGHT% ^
+                            -CroppedAreaLeftPixels=0 ^
+                            -CroppedAreaTopPixels=0 ^
+                            --FocalLength ^
+                            --FieldOfView ^
+                            --ThumbnailImage ^
+                            --PreviewImage ^
+                            --EncodingProcess ^
+                            --YCbCrSubSampling ^
+                            --Compression %OUTNAME%
 if %ERRORLEVEL% EQU 1 echo Setting EXIF failed, ignoring
 
 :: There are problems with -delete_original in exiftool, manually remove the file
@@ -190,6 +226,7 @@ del %OUTNAME%_original
 :: Time calculation
 set end=%time%
 set options="tokens=1-4 delims=:.,"
+:: Don't try to break lines here, it will most probably not work
 for /f %options% %%a in ("%start%") do set start_h=%%a&set /a start_m=100%%b %% 100&set /a start_s=100%%c %% 100&set /a start_ms=100%%d %% 100
 for /f %options% %%a in ("%end%") do set end_h=%%a&set /a end_m=100%%b %% 100&set /a end_s=100%%c %% 100&set /a end_ms=100%%d %% 100
 
