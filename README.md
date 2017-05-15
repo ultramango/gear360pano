@@ -1,6 +1,6 @@
 # About
 
-Simple script to create equirectangular panorama from Samsung Gear 360.
+Simple script to create equirectangular panoramic photos or videos from Samsung Gear 360 (generation 1).
 
 ![Samsung Gear 360](gear360.jpg)
 
@@ -8,6 +8,7 @@ Simple script to create equirectangular panorama from Samsung Gear 360.
 
 Latest Changes:
 
+- 2017-05-16: small update, added poorman's gallery in html
 - 2017-03-17: added compatibility with Google Photos (contribution by Ry0 and ftoledo).
 - 2017-02-04: added tutorial how to manually create initial panorama in Hugin, updated template, now it resembles panorama created by Samsung S7 phone (it is horizontally rotated by 180 deg.).
 - 2017-01-25: added EXIF data to output file, Windows has now command timing, cosmetic changes to the file.
@@ -23,7 +24,7 @@ Latest Changes:
 
 Requirements:
 
-* Linux, Windows (native & cygwin), should work on Mac.
+* Linux, Windows, should work on Mac.
 * [Hugin](http://hugin.sourceforge.net/).
 * [ffmpeg](https://ffmpeg.org/download.html) (optional, needed for video stitching).
 
@@ -35,7 +36,7 @@ Use your distributions' package manager to install [Hugin](http://hugin.sourcefo
 
     apt-get install hugin
 
-Do the same for ```ffmpeg``` if you want video stitching. It is usually installed on many systems.
+Do the same for ```ffmpeg``` if you want video stitching, it is usually installed on many systems.
 
 Clone or download zip of this project then unpack it somewhere.
 
@@ -99,6 +100,7 @@ Don't have any expectations for video stitching to work well, it is higly unopti
 
 What is/might be wrong (loose notes about the script):
 
+* only the highest resolution is currently supported (3840x1920),
 * video stitching works by converting it to image files, stitching them and then re-coding,
 * it might require a lot of disk space (gigabytes or even more) as the long videos will result in many image files, this could be
 optimised by removing files which are no longer needed, also check for left-over directories that might have not been removed,
@@ -116,6 +118,7 @@ This video shows how to create an initial (no proper stitching) panorama file fr
 
 Links:
 * easy to setup HTML panorama viewer [Pannellum](https://pannellum.org/),
+* panorama photo and video viewer: [Valiant360](https://github.com/flimshaw/Valiant360),
 * some notes on [Gear360 firmware](https://github.com/ultramango/gear360reveng).
 
 # TODOs
@@ -124,4 +127,5 @@ Few things that could be improved:
 
 * included [Hugin](http://hugin.sourceforge.net/) template file is not perfect and bad seams will happen (especially for close objects),
 * there's no vignetting correction, better lens correction could be created,
+* panorama seams on stitched video are "flickering",
 * script could have few parameters added like: jpeg quality, EXIF tags update.
