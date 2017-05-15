@@ -72,6 +72,10 @@ Output (example for Windows):
 
 This will produce a file `360_0001_pano.jpg`. Output filename can be given as a second parameter.
 
+To process all panorama files in current directory (Windows):
+
+    forfiles /m *.JPG /c "cmd.exe /c gear360pano.cmd @file"
+
 To process all panorama files in current directory (Linux):
 
     for i in 360*.JPG; do ./gear360pano.cmd $i; done
