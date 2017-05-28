@@ -36,4 +36,4 @@ Code used:
 * [Valiant360](https://github.com/flimshaw/Valiant360).
 * [jQuery](http://jquery.com/).
 * [Three.js](http://threejs.org/).
-* [Font Awesome](http://fortawesome.github.io/Font-Awesome/) (not used actually).
+* [Font Awesome](http://fortawesome.github.io/Font-Awesome/).
