@@ -23,6 +23,7 @@ OUTNAME=$2
 JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"
 
+
 # Clean-up function
 clean_up() {
     if [ -d "$TEMPDIR" ]; then
@@ -48,6 +49,10 @@ run_command() {
 }
 
 process_panorama() {
+  # Create temporary directory locally to stay compatible with other OSes
+  # Not using '-p .' might cause some problems on non-unix systems (cygwin?)
+  TEMPDIR=`mktemp -d`
+
   # Stitch panorama (same file twice as input)
   echo "Processing input images (nona)"
   # We need to use run_command with many parameters, or $1 doesn't get
@@ -100,20 +105,34 @@ process_panorama() {
   clean_up
 }
 
-
-
-
-
+print_help() {
+  echo "Small script to stitch raw panorama files."
+  echo "Raw meaning two fisheye images side by side."
+  echo -e "Script originally writen for Samsung Gear 360.\n"
+  echo -e "Usage:\n$0 [-q|--quality QUALITY] infile [outputfile] [hugintemplate]\n"
+  echo "Where infile is a panorama file from camera, it can"
+  echo "be a wildcard (ex. *.JPG)."
+  echo "output parameter and hugintemplate are optional, defaults will"
+  echo -e "be assumed if they are not given\n"
+  echo "-q|--quality will set the JPEG quality to QUALITY"
+  echo "-h|--help    prints help"
+}
 
 # https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
-while [[ $# -gt 1 ]]
+while [[ $# -gt 0 ]]
 do
 key="$1"
+
+echo Key: $key
 
 case $key in
     -q|--quality)
       JPGQUALITY="$2"
       shift # past argument
+      ;;
+    -h|--help)
+      print_help
+      exit 0
       ;;
     *)
       # unknown option
@@ -122,14 +141,11 @@ esac
 shift # past argument or value
 done
 
+echo $PRINTHELP
+
 # Check argument(s)
 if [ -z "$1" ]; then
-    echo "Small script to stitch raw panorama files."
-    echo "Raw meaning two fisheye images side by side."
-    echo -e "Script originally writen for Samsung Gear 360.\n"
-    echo -e "Usage:\n$0 INNAME [outputfile] [hugintemplate]\n"
-    echo "Where INNAME is a panorama file from camera,"
-    echo "output parameter and hugintemplate are optional."
+    print_help
     exit 1
 fi
 
@@ -143,13 +159,15 @@ fi
 # http://stackoverflow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
 type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it's not installed. Aborting."; exit 1; }
 
-# Create temporary directory locally to stay compatible with other OSes
-# Not using '-p .' might cause some problems on non-unix systems (cygwin?)
-TEMPDIR=`mktemp -d`
-
 STARTTS=`date +%s`
 
-for i in $2 do
+exit 0
+
+echo "JPEG quality set to ${JPGQUALITY}"
+
+for i in $1
+do
+  echo "Processing file: $i"
   OUTNAME=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
   process_panorama $i $OUTNAME
 done
@@ -157,7 +175,7 @@ done
 # Inform user about the result
 ENDTS=`date +%s`
 RUNTIME=$((ENDTS-STARTTS))
-echo Panorama written to $OUTNAME, took: $RUNTIME s
+echo Processing took: $RUNTIME s
 
 # Uncomment this if you don't do videos; otherwise, it is quite annoying
 #notify-send "Panorama written to $OUTNAME, took: $RUNTIME s"
@@ -199,6 +217,9 @@ if "%FIRSTCHAR%" == "/" (
     set JPGQUALITY=%1
     echo "JPEG quality set to: !JPGQUALITY!"
   )
+  if /i "%SWITCH%" == "h" (
+    goto NOARGS
+  )
 ) else (
   if %PARAMCOUNT% EQU 0 set PROTOINNAME=%_TMP%
   if %PARAMCOUNT% EQU 1 set OUTNAME=%_TMP%
@@ -227,6 +248,7 @@ rem Do processing of files
 for %%f in (%PROTOINNAME%) do (
   set OUTNAME=%%~nf_pano.jpg
   set INNAME=%%f
+  echo "Processing file: %INNAME%"
   call :PROCESSPANORAMA !INNAME! !OUTNAME!
 )
 
@@ -271,6 +293,7 @@ echo output and hugintemplate are optional, defaults will
 echo be assumed if they are not given
 echo.
 echo /q switch sets output jpeg quality
+echo /h prints help
 echo.
 goto END
 
