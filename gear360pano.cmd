@@ -47,6 +47,81 @@ run_command() {
     return $status
 }
 
+process_panorama() {
+  # Stitch panorama (same file twice as input)
+  echo "Processing input images (nona)"
+  # We need to use run_command with many parameters, or $1 doesn't get
+  # quoted correctly and we cannot use filenames with spaces
+  run_command  "nona" "-o" "$TEMPDIR/$OUTTMPNAME" \
+               "-m" "TIFF_m" \
+               "-z" "LZW" \
+               $PTOTMPL \
+               "$1" \
+               "$1"
+
+  echo "Stitching input images (enblend)"
+  # We need to use run_command with many parameters,
+  # or the directories don't get quoted correctly
+  run_command "enblend" "-o" "$2" \
+              "--compression=jpeg:$JPGQUALITY" \
+              "$TEMPDIR/${OUTTMPNAME}0000.tif" \
+              "$TEMPDIR/${OUTTMPNAME}0001.tif"
+
+  # TODO: not sure about the tag exclusion list...
+  # Note: there's no check as exiftool is needed by Hugin
+  IMG_WIDTH=7776
+  IMG_HEIGHT=3888
+  echo "Setting EXIF data (exiftool)"
+  run_command "exiftool" "-ProjectionType=equirectangular" \
+              "-q" \
+              "-m" \
+              "-TagsFromFile" "$1" \
+              "-exif:all" \
+              "-ExifByteOrder=II" \
+              "-FullPanoWidthPixels=$IMG_WIDTH" \
+              "-FullPanoHeightPixels=$IMG_HEIGHT" \
+              "-CroppedAreaImageWidthPixels=$IMG_WIDTH" \
+              "-CroppedAreaImageHeightPixels=$IMG_HEIGHT" \
+              "-CroppedAreaLeftPixels=0" \
+              "-CroppedAreaTopPixels=0" \
+              "--FocalLength" \
+              "--FieldOfView" \
+              "--ThumbnailImage" \
+              "--PreviewImage" \
+              "--EncodingProcess" \
+              "--YCbCrSubSampling" \
+              "--Compression" \
+              "$2"
+
+  # Problems with "-delete_original!", manually remove the file
+  rm ${2}_original
+
+  # Clean up any files/directories we created on the way
+  clean_up
+}
+
+
+
+
+
+
+# https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
+while [[ $# -gt 1 ]]
+do
+key="$1"
+
+case $key in
+    -q|--quality)
+      JPGQUALITY="$2"
+      shift # past argument
+      ;;
+    *)
+      # unknown option
+    ;;
+esac
+shift # past argument or value
+done
+
 # Check argument(s)
 if [ -z "$1" ]; then
     echo "Small script to stitch raw panorama files."
@@ -56,12 +131,6 @@ if [ -z "$1" ]; then
     echo "Where INNAME is a panorama file from camera,"
     echo "output parameter and hugintemplate are optional."
     exit 1
-fi
-
-# Output name as second argument
-if [ -z "$2" ]; then
-    # The output needs to be done in the folder of the original file if used via nautlius open-with
-    OUTNAME=`dirname "$1"`/`basename "${1%.*}"`_pano.jpg
 fi
 
 # Template to use as third argument
@@ -79,56 +148,11 @@ type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it's not installed. 
 TEMPDIR=`mktemp -d`
 
 STARTTS=`date +%s`
-# Stitch panorama (same file twice as input)
-echo "Processing input images (nona)"
-# We need to use run_command with many parameters, or $1 doesn't get
-# quoted correctly and we cannot use filenames with spaces
-run_command  "nona" "-o" "$TEMPDIR/$OUTTMPNAME" \
-             "-m" "TIFF_m" \
-             "-z" "LZW" \
-             $PTOTMPL \
-             "$1" \
-             "$1"
 
-echo "Stitching input images (enblend)"
-# We need to use run_command with many parameters,
-# or the directories don't get quoted correctly
-run_command "enblend" "-o" "$OUTNAME" \
-            "--compression=jpeg:$JPGQUALITY" \
-            "$TEMPDIR/${OUTTMPNAME}0000.tif" \
-            "$TEMPDIR/${OUTTMPNAME}0001.tif"
-
-# TODO: not sure about the tag exclusion list...
-# Note: there's no check as exiftool is needed by Hugin
-IMG_WIDTH=7776
-IMG_HEIGHT=3888
-echo "Setting EXIF data (exiftool)"
-run_command "exiftool" "-ProjectionType=equirectangular" \
-            "-q" \
-            "-m" \
-            "-TagsFromFile" "$1" \
-            "-exif:all" \
-            "-ExifByteOrder=II" \
-            "-FullPanoWidthPixels=$IMG_WIDTH" \
-            "-FullPanoHeightPixels=$IMG_HEIGHT" \
-            "-CroppedAreaImageWidthPixels=$IMG_WIDTH" \
-            "-CroppedAreaImageHeightPixels=$IMG_HEIGHT" \
-            "-CroppedAreaLeftPixels=0" \
-            "-CroppedAreaTopPixels=0" \
-            "--FocalLength" \
-            "--FieldOfView" \
-            "--ThumbnailImage" \
-            "--PreviewImage" \
-            "--EncodingProcess" \
-            "--YCbCrSubSampling" \
-            "--Compression" \
-            "$OUTNAME"
-
-# Problems with "-delete_original!", manually remove the file
-rm ${OUTNAME}_original
-
-# Clean up any files/directories we created on the way
-clean_up
+for i in $2 do
+  OUTNAME=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
+  process_panorama $i $OUTNAME
+done
 
 # Inform user about the result
 ENDTS=`date +%s`
