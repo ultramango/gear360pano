@@ -6,10 +6,6 @@ remIGNORE_THIS_LINE
 # This is a small script to stitch panorama images produced
 # by Samsung Gear360
 #
-# TODOs:
-# - vignetting correction is not there yet
-# - could add some parameters for output, jpeg quality, etc.
-#
 # Trick with Win/Linux from here:
 # http://stackoverflow.com/questions/17510688/single-script-to-run-in-both-windows-batch-and-linux-bash
 
@@ -17,11 +13,11 @@ remIGNORE_THIS_LINE
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
+OUTDIR=.
 PTOTMPL=$2
 OUTTMPNAME="out"
 JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"
-
 
 # Clean-up function
 clean_up() {
@@ -30,7 +26,9 @@ clean_up() {
     fi
 }
 
-# Function to check if a command fails
+# Function to check if a command fails, arguments:
+# - command to execute
+# Source:
 # http://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 run_command() {
     "$@"
@@ -47,6 +45,11 @@ run_command() {
     return $status
 }
 
+# Function that processes panorama, arguments:
+# - input filename
+# - output filename
+# - template filename
+#
 process_panorama() {
   # Create temporary directory locally to stay compatible with other OSes
   # Not using '-p .' might cause some problems on non-unix systems (cygwin?)
@@ -59,7 +62,7 @@ process_panorama() {
   run_command  "nona" "-o" "$TEMPDIR/$OUTTMPNAME" \
                "-m" "TIFF_m" \
                "-z" "LZW" \
-               $PTOTMPL \
+               "$3" \
                "$1" \
                "$1"
 
@@ -119,6 +122,7 @@ print_help() {
   echo "-h|--help    prints help"
 }
 
+# Source (modified)
 # https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
 while [[ $# -gt 0 ]]
 do
@@ -127,35 +131,41 @@ key="$1"
 case $key in
     -q|--quality)
       JPGQUALITY="$2"
+      # Two shifts because there's no shift in the loop
+      # otherwise we can't handle just "-h" option
+      shift
       shift
       ;;
     -h|--help)
       print_help
+      shift
       exit 0
       ;;
     -o|--output)
       OUTDIR="$2"
       shift
+      shift
+      ;;
+    -g|--gallery)
+      CREATEGALLERY=yes
+      shift
       ;;
     *)
-      # unknown option
+      break
     ;;
 esac
-shift # past argument or value
 done
-
-echo $PRINTHELP
 
 # Check argument(s)
 if [ -z "$1" ]; then
-    print_help
-    exit 1
+  print_help
+  exit 1
 fi
 
 # Template to use as second argument
 if [ -z "$2" ]; then
-    # Assume default template
-    PTOTMPL="$DIR/gear360tmpl.pto"
+  # Assume default template
+  PTOTMPL="$DIR/gear360tmpl.pto"
 fi
 
 # Check if we have the software to do it (Hugin, ImageMagick)
@@ -164,14 +174,16 @@ type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it's not installed. 
 
 STARTTS=`date +%s`
 
-echo "JPEG quality set to ${JPGQUALITY}"
-
 for i in $1
 do
   echo "Processing file: $i"
   OUTNAME=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
-  process_panorama $i $OUTDIR/$OUTNAME
+  process_panorama $i $OUTDIR/$OUTNAME $PTOTMPL
 done
+
+if [ "$CREATEGALLERY" == "yes" ]; then
+  echo "Creating gallery not implemented"
+fi
 
 # Inform user about the result
 ENDTS=`date +%s`
@@ -223,6 +235,9 @@ if "%FIRSTCHAR%" == "/" (
     shift
     set OUTDIR=%1
   )
+  if /i "%SWITCH%" == "g" (
+    set CREATEGALLERY=yes
+  )
 ) else (
   if %PARAMCOUNT% EQU 0 set PROTOINNAME=%_TMP%
   if %PARAMCOUNT% EQU 1 set PTOTMPL=%_TMP%
@@ -246,14 +261,16 @@ if not exist "%HUGINPATH1%/enblend.exe" (
   set HUGINPATH1=%HUGINPATH2%
 )
 
-echo "JPEG quality set to: %JPGQUALITY%"
-
 rem Do processing of files
 for %%f in (%PROTOINNAME%) do (
   set OUTNAME=%OUTDIR%\%%~nf_pano.jpg
   set INNAME=%%f
   echo "Processing file: %INNAME%"
-  call :PROCESSPANORAMA !INNAME! !OUTNAME!
+  call :PROCESSPANORAMA !INNAME! !OUTNAME! !PTOTMPL!
+)
+
+if %CREATEGALLERY% == "yes" (
+  echo Creating gallery not yet implemented
 )
 
 rem Time calculation
@@ -325,13 +342,14 @@ goto eof
 
 set LOCALINNAME=%1
 set LOCALOUTNAME=%2
+set LOCALPTOTMPL=%3
 
 rem Execute commands (as simple as it is)
 echo Processing input images (nona)
 "%HUGINPATH1%/nona.exe" -o %TEMP%/%OUTTMPNAME% ^
               -m TIFF_m ^
               -z LZW ^
-              %PTOTMPL% ^
+              %LOCALPTOTMPL% ^
               %LOCALINNAME% ^
               %LOCALINNAME%
 if %ERRORLEVEL% equ 1 goto NONAERROR
