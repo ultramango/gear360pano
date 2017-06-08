@@ -1,7 +1,7 @@
-:<<"::IGNORE_THIS_LINE"
+:<<"remIGNORE_THIS_LINE"
 @echo off
 goto :CMDSCRIPT
-::IGNORE_THIS_LINE
+remIGNORE_THIS_LINE
 
 # This is a small script to stitch panorama images produced
 # by Samsung Gear360
@@ -52,8 +52,8 @@ if [ -z "$1" ]; then
     echo "Small script to stitch raw panorama files."
     echo "Raw meaning two fisheye images side by side."
     echo -e "Script originally writen for Samsung Gear 360.\n"
-    echo -e "Usage:\n$0 inputfile [outputfile] [hugintemplate]\n"
-    echo "Where inputfile is a panorama file from camera,"
+    echo -e "Usage:\n$0 INNAME [outputfile] [hugintemplate]\n"
+    echo "Where INNAME is a panorama file from camera,"
     echo "output parameter and hugintemplate are optional."
     exit 1
 fi
@@ -143,66 +143,161 @@ exit 0
 
 :CMDSCRIPT
 
-:: http://stackoverflow.com/questions/673523/how-to-measure-execution-time-of-command-in-windows-command-line
+rem http://stackoverflow.com/questions/673523/how-to-measure-execution-time-of-command-in-windows-command-line
 set start=%time%
 
-set HUGINPATH1=c:/Program Files/Hugin/bin
-set HUGINPATH2=c:/Program Files (x86)/Hugin/bin
-set PTOTMPL=%3
-set OUTTMPNAME="out"
-set OUTNAME=%2
+set HUGINPATH1=C:/Program Files/Hugin/bin
+set HUGINPATH2=C:/Program Files (x86)/Hugin/bin
+rem This is to avoid some weird bug (???) %~dp0 doesn't work in a loop (effect of shift?)
+set SCRIPTNAME=%0
+set SCRIPTPATH=%~dp0
+set OUTTMPNAME=out
+set INNAME=
+set OUTNAME=
+set PTOTMPL=
 set JPGQUALITY=97
-set PTOJPGFILENAME="dummy.jpg"
+set PTOJPGFILENAME=dummy.jpg
 
-:: Check arguments
-if [%1] == [] goto NOARGS
+rem Process arguments
+set PARAMCOUNT=0
+rem We need this due to stupid parameter substitution
+setlocal enabledelayedexpansion
+:PARAMLOOP
+rem Small hack as substring doesn't work on %1 (need to use delayed sub.?)
+set _TMP=%1
+set FIRSTCHAR=%_TMP:~0,1%
+if "%_TMP%" == "" goto PARAMDONE
+if "%FIRSTCHAR%" == "/" (
+  set SWITCH=%_TMP:~1,2%
+  rem Switch processing
+  if /i "%SWITCH%" == "q" (
+    shift
+    set JPGQUALITY=%1
+    echo "JPEG quality set to: !JPGQUALITY!"
+  )
+) else (
+  if %PARAMCOUNT% EQU 0 set PROTOINNAME=%_TMP%
+  if %PARAMCOUNT% EQU 1 set OUTNAME=%_TMP%
+  if %PARAMCOUNT% EQU 2 set PTOTMPL=%_TMP%
+  set /a PARAMCOUNT+=1
+)
+shift & goto PARAMLOOP
+:PARAMDONE
 
-:: Check if second argument present, if not, set some default for output filename
-if not [%2] == [] goto SETNAMEOK
-set OUTNAME="%~n1_pano.jpg"
+rem Check arguments and assume defaults
+if "%PROTOINNAME%" == "" goto NOARGS
+rem OUTNAME will be calculated dynamically
+if "%PTOTMPL%" == "" (
+  set PTOTMPL="%SCRIPTPATH%gear360tmpl.pto"
+)
 
-:SETNAMEOK
+rem Where's enblend? Prefer 64 bits
+if not exist "%HUGINPATH1%/enblend.exe" (
+  rem 64 bits not found? Check x86
+  if not exist "%HUGINPATH2%/enblend.exe" goto NOHUGIN
+  rem Found x86, overwrite original path
+  set HUGINPATH1=%HUGINPATH2%
+)
 
-:: Third argument as Hugin template
-if not [%3] == [] goto SETTMPLOK
-set PTOTMPL="%~dp0/gear360tmpl.pto"
+rem Do processing of files
+for %%f in (%PROTOINNAME%) do (
+  set OUTNAME=%%~nf_pano.jpg
+  set INNAME=%%f
+  call :PROCESSPANORAMA !INNAME! !OUTNAME!
+)
 
-:SETTMPLOK
+rem Time calculation
+set end=%time%
+set options="tokens=1-4 delims=:.,"
+rem Don't try to break lines here, it will most probably not work
+for /f %options% %%a in ("%start%") do set start_h=%%a&set /a start_m=100%%b %% 100&set /a start_s=100%%c %% 100&set /a start_ms=100%%d %% 100
+for /f %options% %%a in ("%end%") do set end_h=%%a&set /a end_m=100%%b %% 100&set /a end_s=100%%c %% 100&set /a end_ms=100%%d %% 100
 
-:: Where's enblend? Prefer 64 bits
-if exist "%HUGINPATH1%/enblend.exe" goto HUGINOK
-:: 64 bits not found? Check x86
-if not exist "%HUGINPATH2%/enblend.exe" goto NOHUGIN
-:: Found x86, overwrite original path
-set HUGINPATH1=%HUGINPATH2%
+set /a hours=%end_h%-%start_h%
+set /a mins=%end_m%-%start_m%
+set /a secs=%end_s%-%start_s%
+set /a ms=%end_ms%-%start_ms%
+if %ms% lss 0 set /a secs = %secs% - 1 & set /a ms = 100%ms%
+if %secs% lss 0 set /a mins = %mins% - 1 & set /a secs = 60%secs%
+if %mins% lss 0 set /a hours = %hours% - 1 & set /a mins = 60%mins%
+if %hours% lss 0 set /a hours = 24%hours%
+if 1%ms% lss 100 set ms=0%ms%
 
-:HUGINOK
+rem mission accomplished
+set /a totalsecs = %hours%*3600 + %mins%*60 + %secs%
 
-:: Execute commands (as simple as it is)
+echo Processing took: %totalsecs% s
+
+goto END
+
+:NOARGS
+
+echo.
+echo Script to stitch raw panorama files, raw meaning
+echo two fisheye images side by side.
+echo.
+echo Script originally writen for Samsung Gear 360.
+echo.
+echo Usage:
+echo %SCRIPTNAME% [/q quality] infile [outputfile] [hugintemplate]
+echo.
+echo Where infile is a panorama file from camera, it can
+echo be a wildcard (ex. *.jpg).
+echo output and hugintemplate are optional, defaults will
+echo be assumed if they are not given
+echo.
+echo /q switch sets output jpeg quality
+echo.
+goto END
+
+:NOHUGIN
+
+echo.
+echo Hugin is not installed or installed in non-standard directory
+echo Was looking in: %HUGINPATH1%
+echo and: %HUGINPATH2%
+goto END
+
+:NONAERROR
+
+echo nona failed, panorama not created
+goto END
+
+:ENBLENDERROR
+
+echo enblend failed, panorama not created
+goto END
+
+:PROCESSPANORAMA
+
+set LOCALINNAME=%1
+set LOCALOUTNAME=%2
+
+rem Execute commands (as simple as it is)
 echo Processing input images (nona)
 "%HUGINPATH1%/nona.exe" -o %TEMP%/%OUTTMPNAME% ^
               -m TIFF_m ^
               -z LZW ^
               %PTOTMPL% ^
-              %1 ^
-              %1
-if %ERRORLEVEL% EQU 1 goto NONAERROR
+              %LOCALINNAME% ^
+              %LOCALINNAME%
+if %ERRORLEVEL% equ 1 goto NONAERROR
 
 echo Stitching input images (enblend)
-"%HUGINPATH1%/enblend.exe" -o %OUTNAME% ^
+"%HUGINPATH1%/enblend.exe" -o %2 ^
               --compression=jpeg:%JPGQUALITY% ^
               %TEMP%/%OUTTMPNAME%0000.tif ^
               %TEMP%/%OUTTMPNAME%0001.tif
-if %ERRORLEVEL% EQU 1 goto ENBLENDERROR
+if %ERRORLEVEL% equ 1 goto ENBLENDERROR
 
-:: Check if we have exiftool...
+rem Check if we have exiftool...
 echo Setting EXIF data (exiftool)
 set IMG_WIDTH=7776
 set IMG_HEIGHT=3888
 "%HUGINPATH1%/exiftool.exe" -ProjectionType=equirectangular ^
                             -m ^
                             -q ^
-                            -TagsFromFile %1 ^
+                            -TagsFromFile %LOCALINNAME% ^
                             -exif:all ^
                             -ExifByteOrder=II ^
                             -FullPanoWidthPixels=%IMG_WIDTH% ^
@@ -217,63 +312,11 @@ set IMG_HEIGHT=3888
                             --PreviewImage ^
                             --EncodingProcess ^
                             --YCbCrSubSampling ^
-                            --Compression %OUTNAME%
-if %ERRORLEVEL% EQU 1 echo Setting EXIF failed, ignoring
+                            --Compression %LOCALOUTNAME%
+if "%ERRORLEVEL%" EQU 1 echo Setting EXIF failed, ignoring
 
-:: There are problems with -delete_original in exiftool, manually remove the file
-del %OUTNAME%_original
-
-:: Time calculation
-set end=%time%
-set options="tokens=1-4 delims=:.,"
-:: Don't try to break lines here, it will most probably not work
-for /f %options% %%a in ("%start%") do set start_h=%%a&set /a start_m=100%%b %% 100&set /a start_s=100%%c %% 100&set /a start_ms=100%%d %% 100
-for /f %options% %%a in ("%end%") do set end_h=%%a&set /a end_m=100%%b %% 100&set /a end_s=100%%c %% 100&set /a end_ms=100%%d %% 100
-
-set /a hours=%end_h%-%start_h%
-set /a mins=%end_m%-%start_m%
-set /a secs=%end_s%-%start_s%
-set /a ms=%end_ms%-%start_ms%
-if %ms% lss 0 set /a secs = %secs% - 1 & set /a ms = 100%ms%
-if %secs% lss 0 set /a mins = %mins% - 1 & set /a secs = 60%secs%
-if %mins% lss 0 set /a hours = %hours% - 1 & set /a mins = 60%mins%
-if %hours% lss 0 set /a hours = 24%hours%
-if 1%ms% lss 100 set ms=0%ms%
-
-:: mission accomplished
-set /a totalsecs = %hours%*3600 + %mins%*60 + %secs%
-
-echo Panorama written to %OUTNAME%, took: %totalsecs% s
-
-goto END
-
-:NOARGS
-
-echo Script to stitch raw panorama files, raw meaning
-echo two fisheye images side by side.
-echo.
-echo Script originally writen for Samsung Gear 360.
-echo.
-echo Usage:
-echo %0 inputfile [outputfile] [hugintemplate]
-echo.
-echo Where inputfile is a panorama file from camera,
-echo output and hugintemplate are optional
-goto END
-
-:NOHUGIN
-
-echo Hugin is not installed or installed in non-standard directory
-goto END
-
-:NONAERROR
-
-echo nona failed, panorama not created
-goto END
-
-:ENBLENDERROR
-
-echo enblend failed, panorama not created
-goto END
+rem There are problems with -delete_original in exiftool, manually remove the file
+del %LOCALOUTNAME%_original
+exit /b 0
 
 :END
