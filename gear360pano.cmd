@@ -17,9 +17,8 @@ remIGNORE_THIS_LINE
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
-PTOTMPL=$3
+PTOTMPL=$2
 OUTTMPNAME="out"
-OUTNAME=$2
 JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"
 
@@ -106,15 +105,17 @@ process_panorama() {
 }
 
 print_help() {
-  echo "Small script to stitch raw panorama files."
+  echo -e "\nSmall script to stitch raw panorama files."
   echo "Raw meaning two fisheye images side by side."
   echo -e "Script originally writen for Samsung Gear 360.\n"
   echo -e "Usage:\n$0 [-q|--quality QUALITY] infile [outputfile] [hugintemplate]\n"
   echo "Where infile is a panorama file from camera, it can"
-  echo "be a wildcard (ex. *.JPG)."
-  echo "output parameter and hugintemplate are optional, defaults will"
-  echo -e "be assumed if they are not given\n"
+  echo -e "be a wildcard (ex. *.JPG). hugintemplate is optional.\n"
+  echo "Panorama file will be written to a file with appended _pano,"
+  echo -e "example: 360_010.JPG -> 360_010_pano.JPG\n"
   echo "-q|--quality will set the JPEG quality to QUALITY"
+  echo "-o|--output  will set the output directory of panoramas"
+  echo "             default: current directory"
   echo "-h|--help    prints help"
 }
 
@@ -123,16 +124,18 @@ while [[ $# -gt 0 ]]
 do
 key="$1"
 
-echo Key: $key
-
 case $key in
     -q|--quality)
       JPGQUALITY="$2"
-      shift # past argument
+      shift
       ;;
     -h|--help)
       print_help
       exit 0
+      ;;
+    -o|--output)
+      OUTDIR="$2"
+      shift
       ;;
     *)
       # unknown option
@@ -149,8 +152,8 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-# Template to use as third argument
-if [ -z "$3" ]; then
+# Template to use as second argument
+if [ -z "$2" ]; then
     # Assume default template
     PTOTMPL="$DIR/gear360tmpl.pto"
 fi
@@ -161,15 +164,13 @@ type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it's not installed. 
 
 STARTTS=`date +%s`
 
-exit 0
-
 echo "JPEG quality set to ${JPGQUALITY}"
 
 for i in $1
 do
   echo "Processing file: $i"
   OUTNAME=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
-  process_panorama $i $OUTNAME
+  process_panorama $i $OUTDIR/$OUTNAME
 done
 
 # Inform user about the result
@@ -195,7 +196,6 @@ set SCRIPTNAME=%0
 set SCRIPTPATH=%~dp0
 set OUTTMPNAME=out
 set INNAME=
-set OUTNAME=
 set PTOTMPL=
 set JPGQUALITY=97
 set PTOJPGFILENAME=dummy.jpg
@@ -215,15 +215,17 @@ if "%FIRSTCHAR%" == "/" (
   if /i "%SWITCH%" == "q" (
     shift
     set JPGQUALITY=%1
-    echo "JPEG quality set to: !JPGQUALITY!"
   )
   if /i "%SWITCH%" == "h" (
     goto NOARGS
   )
+  if /i "%SWITCH%" == "o" (
+    shift
+    set OUTDIR=%1
+  )
 ) else (
   if %PARAMCOUNT% EQU 0 set PROTOINNAME=%_TMP%
-  if %PARAMCOUNT% EQU 1 set OUTNAME=%_TMP%
-  if %PARAMCOUNT% EQU 2 set PTOTMPL=%_TMP%
+  if %PARAMCOUNT% EQU 1 set PTOTMPL=%_TMP%
   set /a PARAMCOUNT+=1
 )
 shift & goto PARAMLOOP
@@ -244,9 +246,11 @@ if not exist "%HUGINPATH1%/enblend.exe" (
   set HUGINPATH1=%HUGINPATH2%
 )
 
+echo "JPEG quality set to: %JPGQUALITY%"
+
 rem Do processing of files
 for %%f in (%PROTOINNAME%) do (
-  set OUTNAME=%%~nf_pano.jpg
+  set OUTNAME=%OUTDIR%\%%~nf_pano.jpg
   set INNAME=%%f
   echo "Processing file: %INNAME%"
   call :PROCESSPANORAMA !INNAME! !OUTNAME!
@@ -274,28 +278,30 @@ set /a totalsecs = %hours%*3600 + %mins%*60 + %secs%
 
 echo Processing took: %totalsecs% s
 
-goto END
+goto eof
 
 :NOARGS
 
 echo.
-echo Script to stitch raw panorama files, raw meaning
-echo two fisheye images side by side.
-echo.
+echo Script to stitch raw panorama files.
+echo Raw meaning two fisheye images side by side.
 echo Script originally writen for Samsung Gear 360.
 echo.
 echo Usage:
-echo %SCRIPTNAME% [/q quality] infile [outputfile] [hugintemplate]
+echo %SCRIPTNAME% [/q quality] [/o outdir] [/h] infile [outputfile] [hugintemplate]
 echo.
 echo Where infile is a panorama file from camera, it can
-echo be a wildcard (ex. *.jpg).
-echo output and hugintemplate are optional, defaults will
-echo be assumed if they are not given
+echo be a wildcard (ex. *.jpg). hugintemplate is optional.
+echo.
+echo Panorama will be written to a file with appended _pano,
+echo example: 360_010.JPG -> 360_010_pano.JPG
 echo.
 echo /q switch sets output jpeg quality
+echo /o sets output directory for stitched panoramas
+echo    default: current directory
 echo /h prints help
 echo.
-goto END
+goto eof
 
 :NOHUGIN
 
@@ -303,17 +309,17 @@ echo.
 echo Hugin is not installed or installed in non-standard directory
 echo Was looking in: %HUGINPATH1%
 echo and: %HUGINPATH2%
-goto END
+goto eof
 
 :NONAERROR
 
 echo nona failed, panorama not created
-goto END
+goto eof
 
 :ENBLENDERROR
 
 echo enblend failed, panorama not created
-goto END
+goto eof
 
 :PROCESSPANORAMA
 
@@ -365,5 +371,3 @@ if "%ERRORLEVEL%" EQU 1 echo Setting EXIF failed, ignoring
 rem There are problems with -delete_original in exiftool, manually remove the file
 del %LOCALOUTNAME%_original
 exit /b 0
-
-:END
