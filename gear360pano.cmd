@@ -18,6 +18,7 @@ OUTTMPNAME="out"
 JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"
 GALLERYDIR="html"
+# Note, this file is inside GALLERYDIR
 GALLERYFILELIST="filelist.txt"
 
 # Clean-up function
@@ -180,6 +181,11 @@ type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it's not installed. 
 
 STARTTS=`date +%s`
 
+# Warn early about the gallery
+if [ "$OUTDIR" != "html/data" ] && [ "$OUTDIR" != "./html/data" ]; then
+  echo -e "\nGallery file list will be updated but output directory not set to html/data\n"
+fi
+
 for i in $1
 do
   echo "Processing file: $i"
@@ -188,7 +194,14 @@ do
 done
 
 if [ "$CREATEGALLERY" == "yes" ]; then
-  echo "Creating gallery not implemented"
+  # This could be a bit more elegant, but this is the easiest
+  cd $GALLERYDIR
+  COUNT=`cat $GALLERYFILELIST | wc -l`
+  echo "Updating gallery file list, old file count: $COUNT"
+  find data -type f -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.mp4" > $GALLERYFILELIST
+  COUNT=`cat $GALLERYFILELIST | wc -l`
+  echo "New file count: $COUNT"
+  cd ..
 fi
 
 # Inform user about the result
