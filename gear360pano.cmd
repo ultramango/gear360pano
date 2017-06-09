@@ -1,10 +1,9 @@
-:<<"remIGNORE_THIS_LINE"
+:<<"::IGNORE_THIS_LINE"
 @echo off
 goto :CMDSCRIPT
-remIGNORE_THIS_LINE
+::IGNORE_THIS_LINE
 
-# This is a small script to stitch panorama images produced
-# by Samsung Gear360
+# This is a small script to stitch panorama images produced  by Samsung Gear360
 #
 # Trick with Win/Linux from here:
 # http://stackoverflow.com/questions/17510688/single-script-to-run-in-both-windows-batch-and-linux-bash
@@ -18,12 +17,14 @@ PTOTMPL=$2
 OUTTMPNAME="out"
 JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"
+GALLERYDIR="html"
+GALLERYFILELIST="filelist.txt"
 
 # Clean-up function
 clean_up() {
-    if [ -d "$TEMPDIR" ]; then
-        rm -rf "$TEMPDIR"
-    fi
+  if [ -d "$TEMPDIR" ]; then
+    rm -rf "$TEMPDIR"
+  fi
 }
 
 # Function to check if a command fails, arguments:
@@ -31,25 +32,24 @@ clean_up() {
 # Source:
 # http://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 run_command() {
-    "$@"
-    local status=$?
-    if [ $status -ne 0 ]; then
-        echo "Error while running $1" >&2
-        if [ $1 != "notify-send" ]; then
-            # Display error in a nice graphical popup if available
-            run_command notify-send "Error while running $1"
-        fi
-        clean_up
-        exit 1
+  "$@"
+  local status=$?
+  if [ $status -ne 0 ]; then
+    echo "Error while running $1" >&2
+    if [ $1 != "notify-send" ]; then
+      # Display error in a nice graphical popup if available
+      run_command notify-send "Error while running $1"
     fi
-    return $status
+    clean_up
+    exit 1
+  fi
+  return $status
 }
 
 # Function that processes panorama, arguments:
 # - input filename
 # - output filename
 # - template filename
-#
 process_panorama() {
   # Create temporary directory locally to stay compatible with other OSes
   # Not using '-p .' might cause some problems on non-unix systems (cygwin?)
@@ -111,15 +111,21 @@ print_help() {
   echo -e "\nSmall script to stitch raw panorama files."
   echo "Raw meaning two fisheye images side by side."
   echo -e "Script originally writen for Samsung Gear 360.\n"
-  echo -e "Usage:\n$0 [-q|--quality QUALITY] infile [outputfile] [hugintemplate]\n"
+  echo -e "Usage:\n$0 [-q quality] [-o outdir] [-h] infile [hugintemplate]\n"
   echo "Where infile is a panorama file from camera, it can"
   echo -e "be a wildcard (ex. *.JPG). hugintemplate is optional.\n"
   echo "Panorama file will be written to a file with appended _pano,"
   echo -e "example: 360_010.JPG -> 360_010_pano.JPG\n"
-  echo "-q|--quality will set the JPEG quality to QUALITY"
+  echo "-q|--quality will set the JPEG quality to quality"
   echo "-o|--output  will set the output directory of panoramas"
   echo "             default: current directory"
   echo "-h|--help    prints help"
+}
+
+create_gallery() {
+  GALLERYFILELISTFULL="${GALLERYDIR}/${GALLERYFILELIST}"
+  echo "Updating gallery file list in ${GALLERYFILELISTFULL}"
+  ls -l *.mp4 *_pano.jpg > ${GALLERYFILELISTFULL}
 }
 
 # Source (modified)
@@ -129,30 +135,30 @@ do
 key="$1"
 
 case $key in
-    -q|--quality)
-      JPGQUALITY="$2"
-      # Two shifts because there's no shift in the loop
-      # otherwise we can't handle just "-h" option
-      shift
-      shift
-      ;;
-    -h|--help)
-      print_help
-      shift
-      exit 0
-      ;;
-    -o|--output)
-      OUTDIR="$2"
-      shift
-      shift
-      ;;
-    -g|--gallery)
-      CREATEGALLERY=yes
-      shift
-      ;;
-    *)
-      break
+  -q|--quality)
+    JPGQUALITY="$2"
+    # Two shifts because there's no shift in the loop
+    # otherwise we can't handle just "-h" option
+    shift
+    shift
     ;;
+  -h|--help)
+    print_help
+    shift
+    exit 0
+    ;;
+  -o|--output)
+    OUTDIR="$2"
+    shift
+    shift
+    ;;
+  -g|--gallery)
+    CREATEGALLERY=yes
+    shift
+    ;;
+  *)
+    break
+  ;;
 esac
 done
 
@@ -305,15 +311,15 @@ echo Raw meaning two fisheye images side by side.
 echo Script originally writen for Samsung Gear 360.
 echo.
 echo Usage:
-echo %SCRIPTNAME% [/q quality] [/o outdir] [/h] infile [outputfile] [hugintemplate]
+echo %SCRIPTNAME% [/q quality] [/o outdir] [/h] infile [hugintemplate]
 echo.
 echo Where infile is a panorama file from camera, it can
-echo be a wildcard (ex. *.jpg). hugintemplate is optional.
+echo be a wildcard (ex. *.JPG). hugintemplate is optional.
 echo.
 echo Panorama will be written to a file with appended _pano,
 echo example: 360_010.JPG -> 360_010_pano.JPG
 echo.
-echo /q switch sets output jpeg quality
+echo /q sets output jpeg quality
 echo /o sets output directory for stitched panoramas
 echo    default: current directory
 echo /h prints help
@@ -389,3 +395,5 @@ if "%ERRORLEVEL%" EQU 1 echo Setting EXIF failed, ignoring
 rem There are problems with -delete_original in exiftool, manually remove the file
 del %LOCALOUTNAME%_original
 exit /b 0
+
+:eof
