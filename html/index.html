@@ -1,0 +1,59 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Panorama Gallery</title>
+		<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" type="text/css" href="jscss/pannellum.css" />
+    <link rel="stylesheet" type="text/css" href="jscss/video-js.css">
+    <script src="jscss/pannellum.js"></script>
+    <script src="jscss/video.js"></script>
+    <script src="jscss/videojs-pannellum-plugin.js"></script>
+    <style type="text/css">
+      #wrap {
+         width: 1000px;
+         margin: 0 auto;
+      }
+      #left {
+         float: left;
+         width: 200px;
+      }
+      #right {
+         float: right;
+         width: 800px;
+      }
+      ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+      .highlight {
+        font-weight: bold;
+      }
+      .normal {
+        font-weight: normal;
+      }
+      li {
+        cursor: pointer; cursor: hand;
+      }
+      #panophoto {
+        width: 800px;
+        height: 400px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <div id="left">
+        <ul id="objList"></ul>
+      </div>
+
+      <div id="right">
+        <div id="panoroot"></div>
+      </div>
+    </div>
+
+    <script type="text/javascript" src="jscss/gear360.js"></script>
+
+  </body>
+</html>
