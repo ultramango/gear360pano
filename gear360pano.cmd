@@ -12,8 +12,8 @@ goto :CMDSCRIPT
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
+SCRIPTNAME=$0
 OUTDIR=html/data
-PTOTMPL=$2
 OUTTMPNAME="out"
 JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"
@@ -39,7 +39,7 @@ run_command() {
     echo "Error while running $1" >&2
     if [ $1 != "notify-send" ]; then
       # Display error in a nice graphical popup if available
-      run_command notify-send "Error while running $1"
+      run_command notify-send -a $SCRIPTNAME "Error while running $1"
     fi
     clean_up
     exit 1
@@ -172,6 +172,7 @@ if [ -z "$1" ]; then
 fi
 
 # Template to use as second argument
+PTOTMPL=$2
 if [ -z "$2" ]; then
   # Assume default template
   PTOTMPL="$DIR/gear360tmpl.pto"
@@ -184,14 +185,15 @@ type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it's not installed. 
 STARTTS=`date +%s`
 
 # Warn early about the gallery
-if [ "$OUTDIR" != "html/data" ] && [ "$OUTDIR" != "./html/data" ]; then
+if [ "$CREATEGALLERY" == "yes" ] && [ "$OUTDIR" != "html/data" ] && [ "$OUTDIR" != "./html/data" ]; then
   echo -e "\nGallery file list will be updated but output directory not set to html/data\n"
 fi
 
 for i in $1
 do
   echo "Processing file: $i"
-  OUTNAME=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
+  OUTNAMEPROTO=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
+  OUTNAME=`basename $OUTNAMEPROTO`
   process_panorama $i $OUTDIR/$OUTNAME $PTOTMPL
 done
 
@@ -301,12 +303,8 @@ if "%CREATEGALLERY%" == "yes" if not "%OUTDIR%" == "html\data" (
 for %%f in (%PROTOINNAME%) do (
   set OUTNAME=%OUTDIR%\%%~nf_pano.jpg
   set INNAME=%%f
-  if exist "!INNAME!" (
-    echo Processing file: !INNAME!
-    call :PROCESSPANORAMA !INNAME! !OUTNAME! !PTOTMPL!
-  ) else (
-    echo File !INNAME! does not exist, skipping...
-  )
+  echo Processing file: !INNAME!
+  call :PROCESSPANORAMA !INNAME! !OUTNAME! !PTOTMPL!
 )
 
 if "%CREATEGALLERY%" == "yes" (

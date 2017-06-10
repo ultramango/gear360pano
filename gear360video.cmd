@@ -37,10 +37,10 @@ run_command() {
     local status=$?
     if [ $status -ne 0 ]; then
         echo "Error while running $1" >&2
-        if [ $1 != "notify-send" ]; then 
+        if [ $1 != "notify-send" ]; then
            # Display error in a nice graphical popup if available
-           run_command notify-send "Error while running $1"
-        fi 
+           run_command notify-send -a $0 "Error while running $1"
+        fi
         clean_up
         exit 1
     fi
@@ -75,7 +75,7 @@ if [ -z "$1" ]; then
     echo -e "Usage:\n$0 inputdir [outputfile]\n"
     echo "Where inputfile is a panoramic video file,"
     echo "output parameter is optional."
-    run_command notify-send "Please provide an input file."
+    run_command notify-send -a $0 "Please provide an input file."
     sleep 2
     exit 1
 fi
@@ -99,13 +99,14 @@ type ffmpeg >/dev/null 2>&1 || { echo >&2 "ffmpeg required but it's not installe
 FRAMESTEMPDIR=`mktemp -d -p .`
 OUTTEMPDIR=`mktemp -d`
 IMAGETMPL="image%05d.jpg"
+IMAGETMPL2="image%05d_pano.jpg"
 PTOTMPL="gear360video.pto"
 TMPAUDIO="tmpaudio.aac"
 TMPVIDEO="tmpvideo.mp4"
 STARTTS=`date +%s`
 
 # Extract frames from video
-run_command notify-send 'Starting panoramic video stitching...'
+run_command notify-send -a $0 "Starting panoramic video stitching..."
 echo "Extracting frames from video (this might take a while)..."
 run_command ffmpeg -y -i "$1" "$FRAMESTEMPDIR/$IMAGETMPL"
 
@@ -113,25 +114,21 @@ run_command ffmpeg -y -i "$1" "$FRAMESTEMPDIR/$IMAGETMPL"
 echo "Stitching frames..."
 for i in $FRAMESTEMPDIR/*.jpg; do
     echo Frame: $i
-    OUTFILENAME=`basename $i`
-    run_command "/bin/bash" "$DIR/gear360pano.cmd" "$i" "$OUTTEMPDIR/$OUTFILENAME" "$PTOTMPL"
+    run_command "/bin/bash" "$DIR/gear360pano.cmd" "-o" "$OUTTEMPDIR" "$i" "$PTOTMPL"
 done
 
 # Put stitched frames together
 echo "Recoding the video..."
-run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPL" -r 30 -s 3840:1920 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
-
-# Use this for medium size
-#run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPL" -r 30 -s 1920:960 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
+run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPL2" -r 30 -s 3840:1920 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
 
 echo "Extracting audio..."
-run_command notify-send "Extracting audio..."
+run_command notify-send -a $0 "Extracting audio..."
 run_command ffmpeg -y -i "$1" -vn -acodec copy "$OUTTEMPDIR/$TMPAUDIO"
 
 echo "Merging audio..."
-run_command notify-send "Merging audio..."
+run_command notify-send -a $0 "Merging audio..."
 run_command ffmpeg -y -i "$OUTTEMPDIR/$TMPVIDEO" -i "$OUTTEMPDIR/$TMPAUDIO" -c:v copy -c:a aac -strict experimental "$OUTNAME"
-        
+
 # Remove temporary directories
 clean_up
 
@@ -139,7 +136,7 @@ clean_up
 ENDTS=`date +%s`
 RUNTIME=$((ENDTS-STARTTS))
 echo Video written to $OUTNAME, took: $RUNTIME s
-run_command notify-send "'Conversion complete. Video written to $OUTNAME, took: $RUNTIME s'"
+run_command notify-send -a $0 "'Conversion complete. Video written to $OUTNAME, took: $RUNTIME s'"
 exit 0
 
 ################################ Windows part here
@@ -151,7 +148,7 @@ set FRAMESTEMPDIR=frames
 set OUTTEMPDIR=frames_stitched
 set PTOTMPL=gear360video.pto
 :: %% is an escape character (note: this will fail on wine's cmd.exe)
-set IMAGETMPL=image%%05d.jpg
+set IMAGETMPL=image%%05d_pano.jpg
 set TMPAUDIO=tmpaudio.aac
 set TMPVIDEO=tmpvideo.mp4
 
@@ -181,7 +178,7 @@ for %%f in (%FRAMESTEMPDIR%/*.jpg) do (
 :: For whatever reason (this has to be at the beginning of the line!)
   echo Processing frame %FRAMESTEMPDIR%\%%f
 :: TODO: There should be some error checking
-  call gear360pano.cmd %FRAMESTEMPDIR%\%%f %OUTTEMPDIR%\%%f %PTOTMPL%
+  call gear360pano.cmd /o %OUTTEMPDIR% %FRAMESTEMPDIR%\%%f %PTOTMPL%
 )
 
 echo "Reencoding video..."
