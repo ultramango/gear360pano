@@ -12,7 +12,7 @@ goto :CMDSCRIPT
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
-OUTDIR=.
+OUTDIR=html/data
 PTOTMPL=$2
 OUTTMPNAME="out"
 JPGQUALITY=97
@@ -120,6 +120,8 @@ print_help() {
   echo "-q|--quality will set the JPEG quality to quality"
   echo "-o|--output  will set the output directory of panoramas"
   echo "             default: current directory"
+  echo "-g|--gallery update gallery file list, best with"
+  echo "             -o html/data"
   echo "-h|--help    prints help"
 }
 
@@ -207,7 +209,8 @@ fi
 # Inform user about the result
 ENDTS=`date +%s`
 RUNTIME=$((ENDTS-STARTTS))
-echo Processing took: $RUNTIME s
+echo "Processing took: $RUNTIME s"
+echo "Processed files should be in $OUTDIR"
 
 # Uncomment this if you don't do videos; otherwise, it is quite annoying
 #notify-send "Panorama written to $OUTNAME, took: $RUNTIME s"
@@ -222,12 +225,16 @@ set start=%time%
 
 set HUGINPATH1=C:/Program Files/Hugin/bin
 set HUGINPATH2=C:/Program Files (x86)/Hugin/bin
+set GALLERYDIR=html
+set GALLERYFILELIST=filelist.txt
+
 rem This is to avoid some weird bug (???) %~dp0 doesn't work in a loop (effect of shift?)
 set SCRIPTNAME=%0
 set SCRIPTPATH=%~dp0
 set OUTTMPNAME=out
 set INNAME=
 set PTOTMPL=
+set OUTDIR=html\data
 set JPGQUALITY=97
 set PTOJPGFILENAME=dummy.jpg
 
@@ -241,20 +248,21 @@ set _TMP=%1
 set FIRSTCHAR=%_TMP:~0,1%
 if "%_TMP%" == "" goto PARAMDONE
 if "%FIRSTCHAR%" == "/" (
-  set SWITCH=%_TMP:~1,2%
+  set SWITCH=!_TMP:~1,2!
   rem Switch processing
-  if /i "%SWITCH%" == "q" (
+  if /i "!SWITCH!" == "q" (
     shift
-    set JPGQUALITY=%1
+    rem shift has no effect (delayed expansion not working on %1?) we have to use %2
+    set JPGQUALITY=%2
   )
-  if /i "%SWITCH%" == "h" (
+  if /i "!SWITCH!" == "h" (
     goto NOARGS
   )
-  if /i "%SWITCH%" == "o" (
+  if /i "!SWITCH!" == "o" (
     shift
-    set OUTDIR=%1
+    set OUTDIR=%2
   )
-  if /i "%SWITCH%" == "g" (
+  if /i "!SWITCH!" == "g" (
     set CREATEGALLERY=yes
   )
 ) else (
@@ -273,23 +281,50 @@ if "%PTOTMPL%" == "" (
 )
 
 rem Where's enblend? Prefer 64 bits
-if not exist "%HUGINPATH1%/enblend.exe" (
-  rem 64 bits not found? Check x86
-  if not exist "%HUGINPATH2%/enblend.exe" goto NOHUGIN
-  rem Found x86, overwrite original path
-  set HUGINPATH1=%HUGINPATH2%
+rem Haha, weird bug, it doesn't work when using brackets (spaces in path)
+if exist "%HUGINPATH1%/enblend.exe" goto HUGINOK
+rem 64 bits not found? Check x86
+if not exist "%HUGINPATH2%/enblend.exe" goto NOHUGIN
+rem Found x86, overwrite original path
+set HUGINPATH1=%HUGINPATH2%
+:HUGINOK
+
+rem Warn early about the gallery
+if "%CREATEGALLERY%" == "yes" if not "%OUTDIR%" == "html\data" (
+  if /i not "%OUTDIR%" == "html\data" (
+    echo.
+    echo Gallery file list will be updated but output directory is not set to html\data
+    echo.
+  )
 )
 
-rem Do processing of files
 for %%f in (%PROTOINNAME%) do (
   set OUTNAME=%OUTDIR%\%%~nf_pano.jpg
   set INNAME=%%f
-  echo "Processing file: %INNAME%"
-  call :PROCESSPANORAMA !INNAME! !OUTNAME! !PTOTMPL!
+  if exist "!INNAME!" (
+    echo Processing file: !INNAME!
+    call :PROCESSPANORAMA !INNAME! !OUTNAME! !PTOTMPL!
+  ) else (
+    echo File !INNAME! does not exist, skipping...
+  )
 )
 
-if %CREATEGALLERY% == "yes" (
-  echo Creating gallery not yet implemented
+if "%CREATEGALLERY%" == "yes" (
+  rem This could be a bit more elegant, but this is the easiest
+  cd $GALLERYDIR
+  echo Updating gallery file list
+  rem Yep, repetition...
+  rem https://superuser.com/questions/1029558/list-files-in-a-subdirectory-and-get-relative-paths-only-with-windows-command-li
+  for %%X IN ('data') DO FOR /F "TOKENS=*" %%F IN (
+    'dir /B /A-D ".\%%~X\*.jpg"'
+  ) do echo .\%%~X\%%~F > "%GALLERYFILELIST%"
+  for %%X IN ('data') DO FOR /F "TOKENS=*" %%F IN (
+    'dir /B /A-D ".\%%~X\*.jpeg"'
+  ) do echo .\%%~X\%%~F >> "%GALLERYFILELIST%"
+  for %%X IN ('data') DO FOR /F "TOKENS=*" %%F IN (
+    'dir /B /A-D ".\%%~X\*.mp4"'
+  ) do echo .\%%~X\%%~F >> "%GALLERYFILELIST%"
+  cd ..
 )
 
 rem Time calculation
@@ -313,6 +348,7 @@ rem mission accomplished
 set /a totalsecs = %hours%*3600 + %mins%*60 + %secs%
 
 echo Processing took: %totalsecs% s
+echo Processed files should be in %OUTDIR%
 
 goto eof
 
@@ -335,6 +371,8 @@ echo.
 echo /q sets output jpeg quality
 echo /o sets output directory for stitched panoramas
 echo    default: current directory
+echo /g update gallery file list, best with
+echo    /o html\data
 echo /h prints help
 echo.
 goto eof
@@ -370,7 +408,7 @@ echo Processing input images (nona)
               -z LZW ^
               %LOCALPTOTMPL% ^
               %LOCALINNAME% ^
-              %LOCALINNAME%
+              "%LOCALINNAME%"
 if %ERRORLEVEL% equ 1 goto NONAERROR
 
 echo Stitching input images (enblend)
@@ -387,7 +425,7 @@ set IMG_HEIGHT=3888
 "%HUGINPATH1%/exiftool.exe" -ProjectionType=equirectangular ^
                             -m ^
                             -q ^
-                            -TagsFromFile %LOCALINNAME% ^
+                            -TagsFromFile "%LOCALINNAME%" ^
                             -exif:all ^
                             -ExifByteOrder=II ^
                             -FullPanoWidthPixels=%IMG_WIDTH% ^
@@ -402,11 +440,11 @@ set IMG_HEIGHT=3888
                             --PreviewImage ^
                             --EncodingProcess ^
                             --YCbCrSubSampling ^
-                            --Compression %LOCALOUTNAME%
+                            --Compression "%LOCALOUTNAME%"
 if "%ERRORLEVEL%" EQU 1 echo Setting EXIF failed, ignoring
 
 rem There are problems with -delete_original in exiftool, manually remove the file
-del %LOCALOUTNAME%_original
+del "%LOCALOUTNAME%_original"
 exit /b 0
 
 :eof
