@@ -5,9 +5,9 @@ m g1 i0 f0 m2 p0.00784314
 
 # image lines
 #-hugin  cropFactor=1
-i w7776 h3888 f2 v360.29754871914 Ra0 Rb0 Rc0 Rd0 Re0 Eev8.32192812713411 Er1 Eb1 r-3.54025885714664 p5.37402634983432 y180 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b0 c0 d-1946.04177321786 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S-64,3945,-37,3965 Vm5 n"360_0529.JPG"
+i w7776 h3888 f2 v360.29754871914 Ra0 Rb0 Rc0 Rd0 Re0 Eev8.32192812713411 Er1 Eb1 r-3.54025885714664 p5.37402634983432 y180 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b0 c0 d-1946.04177321786 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S-64,3945,-37,3965 Vm5 n"dummy.jpg"
 #-hugin  cropFactor=1
-i w7776 h3888 f2 v410.397152225146 Ra0 Rb0 Rc0 Rd0 Re0 Eev8.32192812713411 Er1 Eb1 r4.50324003877262 p-2.21194820325032 y0.453066620485231 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b0 c0 d1970.35542168084 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S3756,7934,-42,3953 Vm5 n"360_0529.JPG"
+i w7776 h3888 f2 v410.397152225146 Ra0 Rb0 Rc0 Rd0 Re0 Eev8.32192812713411 Er1 Eb1 r4.50324003877262 p-2.21194820325032 y0.453066620485231 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b0 c0 d1970.35542168084 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S3756,7934,-42,3953 Vm5 n"dummy.jpg"
 
 
 # specify variables that should be optimized
@@ -166,10 +166,10 @@ k i1 t0 p"3886 1392 3886 2478 3796 1964"
 #hugin_optimizeReferenceImage 0
 #hugin_blender enblend
 #hugin_remapper nona
-#hugin_enblendOptions 
-#hugin_enfuseOptions 
+#hugin_enblendOptions
+#hugin_enfuseOptions
 #hugin_hdrmergeOptions -m avg -c -c
-#hugin_verdandiOptions 
+#hugin_verdandiOptions
 #hugin_outputLDRBlended true
 #hugin_outputLDRLayers false
 #hugin_outputLDRExposureRemapped false

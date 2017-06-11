@@ -15,6 +15,8 @@ DIR=$(dirname `which $0`)
 SCRIPTNAME=$0
 OUTDIR="html/data"
 OUTTMPNAME="out"
+PTOTMPL_SM_C200="$DIR/gear360sm-c210.pto"
+PTOTMPL_SM_R210="$DIR/gear360sm-r210.pto"
 JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"
 GALLERYDIR="html"
@@ -161,7 +163,7 @@ case $key in
     ;;
   *)
     break
-  ;;
+    ;;
 esac
 done
 
@@ -169,13 +171,6 @@ done
 if [ -z "$1" ]; then
   print_help
   exit 1
-fi
-
-# Template to use as second argument
-PTOTMPL=$2
-if [ -z "$2" ]; then
-  # Assume default template
-  PTOTMPL="$DIR/gear360tmpl.pto"
 fi
 
 # Check if we have the software to do it (Hugin, ImageMagick)
@@ -191,9 +186,22 @@ fi
 
 for i in $1
 do
-  echo "Processing file: $i"
+  # Detect camera model
+  CAMERAMODEL=`exiftool -s -s -s -Model $i`
+  case $CAMERAMODEL in
+    SM-C200)
+      PTOTMPL=$PTOTMPL_SM_C200
+      ;;
+    SM-R210)
+      PTOTMPL=$PTOTMPL_SM_R210
+      ;;
+    *)
+      PTOTMPL=$PTOTMPL_SM_C200
+      ;;
+  esac
   OUTNAMEPROTO=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
   OUTNAME=`basename $OUTNAMEPROTO`
+  echo "Processing file: $i"
   process_panorama $i $OUTDIR/$OUTNAME $PTOTMPL
 done
 
@@ -234,6 +242,8 @@ rem This is to avoid some weird bug (???) %~dp0 doesn't work in a loop (effect o
 set SCRIPTNAME=%0
 set SCRIPTPATH=%~dp0
 set OUTTMPNAME=out
+set PTOTMPL_SM_C200="%SCRIPTPATH%gear360sm-c200.pto"
+set PTOTMPL_SM_R210="%SCRIPTPATH%gear360sm-r210.pto"
 set INNAME=
 set PTOTMPL=
 set OUTDIR=html\data
@@ -279,7 +289,7 @@ rem Check arguments and assume defaults
 if "%PROTOINNAME%" == "" goto NOARGS
 rem OUTNAME will be calculated dynamically
 if "%PTOTMPL%" == "" (
-  set PTOTMPL="%SCRIPTPATH%gear360tmpl.pto"
+  set PTOTMPL=%PTOTMPL_SM_C200%
 )
 
 rem Where's enblend? Prefer 64 bits
@@ -303,6 +313,13 @@ if "%CREATEGALLERY%" == "yes" if not "%OUTDIR%" == "html\data" (
 for %%f in (%PROTOINNAME%) do (
   set OUTNAME=%OUTDIR%\%%~nf_pano.jpg
   set INNAME=%%f
+
+  "%HUGINPATH1%/exiftool.exe" -s -s -s -Model !INNAME! > modelname.tmp
+  set /p MODELNAME=<modelname.tmp
+  del modelname.tmp
+  if "!MODELNAME!" == "SM-C200" set PTOTMPL=%PTOTMPL_SM_C200%
+  if "!MODELNAME!" == "SM-R210" set PTOTMPL=%PTOTMPL_SM_R210%
+
   echo Processing file: !INNAME!
   call :PROCESSPANORAMA !INNAME! !OUTNAME! !PTOTMPL!
 )
