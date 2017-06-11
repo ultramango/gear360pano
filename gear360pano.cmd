@@ -13,7 +13,7 @@ goto :CMDSCRIPT
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
 SCRIPTNAME=$0
-OUTDIR=html/data
+OUTDIR="html/data"
 OUTTMPNAME="out"
 JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"

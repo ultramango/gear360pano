@@ -6,13 +6,13 @@ Simple gallery for panoramic videos and photos.
 
 Latest Changes:
 
-- 2017-06-09: moved to pannellum
-- 2017-05-16: initial version
+- 2017-06-09: moved to Pannellum library.
+- 2017-05-16: initial version.
 
 # Usage
 
 Usage:
-1. Copy files (video and photo) to ```data``` directory.
+1. Place files (video and photo) in ```data``` directory.
 2. Add files that you want to be in the gallery to ```filelist.txt```, one file per line (
   they should contain relative path to photos and videos, e.g. ```data/somefile.jpg```).
 
@@ -20,17 +20,13 @@ Manually create file list (Linux), run from this directory:
 
     find data -type f -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.mp4" > filelist.txt
 
-Create file list (Windows) TODO:
-
-    dir /b *.mp4 *.jpg > filelist.txt
-
 Test (Linux):
 
     /usr/bin/env python2 -m SimpleHTTPServer
 
 Open link pointing to [localhost](http://localhost:8000/index.html).
 
-Note: this code has literally zero error control and it's ugly JS.
+Note: this code has very little error control.
 
 # Libraries
 

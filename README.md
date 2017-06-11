@@ -8,7 +8,9 @@ Simple script to create equirectangular panoramic photos or videos from Samsung 
 
 Latest Changes:
 
-- 2017-05-16: small update, added poorman's gallery in html
+- 2017-06-10: support for wildcards, switched gallery to Pannellum, "automatic" gallery creation, no longer possible to set output filename (this is due to acceptance of wildcards/multiple files).
+Lots of changes so expect things not to work well (I did basic testing).
+- 2017-05-16: small update, added poorman's gallery in html.
 - 2017-03-17: added compatibility with Google Photos (contribution by Ry0 and ftoledo).
 - 2017-02-04: added tutorial how to manually create initial panorama in Hugin, updated template, now it resembles panorama created by Samsung S7 phone (it is horizontally rotated by 180 deg.).
 - 2017-01-25: added EXIF data to output file, Windows has now command timing, cosmetic changes to the file.
@@ -57,10 +59,12 @@ Open console or command line (Win key + R then ```cmd.exe```), go to directory w
 
 Usage (example):
 
-    gear360pano.cmd 360_0001.JPG
+    gear360pano.cmd *.JPG
 
 Output (example for Windows):
 
+    C:\temp>gear360pano.cmd *.JPG
+    Processing file: 360_0010.JPG
     Processing input images (nona)
     Stitching input images (enblend)
     enblend: info: loading next image: C:\Users\noone\AppData\Local\Temp/out0000.tif 1/1
@@ -68,17 +72,26 @@ Output (example for Windows):
     enblend: info: writing final output
     enblend: warning: must fall back to export image without alpha channel
     Setting EXIF data (exiftool)
-    Panorama written to "360_0001_pano.jpg", took: 18 s
+    Processing file: 360_00102.JPG
+    Processing input images (nona)
+    Stitching input images (enblend)
+    enblend: info: loading next image: C:\Users\noone\AppData\Local\Temp/out0000.tif 1/1
+    enblend: info: loading next image: C:\Users\noone\AppData\Local\Temp/out0001.tif 1/1
+    enblend: info: writing final output
+    enblend: warning: must fall back to export image without alpha channel
+    Setting EXIF data (exiftool)
+    Processing took: 47 s
+    Processed files should be in html\data
 
-This will produce a file `360_0001_pano.jpg`. Output filename can be given as a second parameter.
+This will produce a panorama files in ```html\data``` directory (default), this can be
+changed with -o (Linux) or /o (Windows) paramter.
 
-To process all panorama files in current directory (Windows):
+List of switches (Windows in brackets):
 
-    forfiles /m *.JPG /c "cmd.exe /c gear360pano.cmd @file"
-
-To process all panorama files in current directory (Linux):
-
-    for i in 360*.JPG; do ./gear360pano.cmd $i; done
+* -o (/o) directory - set output directory
+* -q (/q) quality - set JPEG quality
+* -g (/g) - update gallery files
+* -h (/h) - display help
 
 Script has some simple error checking routines but don't expect any magic.
 
@@ -88,8 +101,11 @@ Few remarks (does not apply for the videos):
 * ensure that you have something like 150 MB of free disk space for intermediate files. If you're tight on disk space, switch to png format (change inside the script), but the processing time increases about four times,
 * on Intel i7, 12 GB memory it takes ~16 seconds to produce the panorama,
 * for better results stitch panorama manually: create new project in Hugin, add two times the same (raw) panorama file, then choose from menu "File" and "Apply Template",
+add points and optimise,
 * script might contain bugs, most possibly running script from weird directories (symbolic links, spaces in paths) or giving image from just as weird directory location,
 * script might not support some exotic interpreters or not work on some older Windows versions. On Linux it should work with bash and zsh,
+* try not to use current directory as output directory, it will process already processed panorama files which might lead to problems,
+* when using zsh, you might need to escape asterisk, otherwise script will hang,
 * script has (should have) Unix line endings.
 
 ### Videos
@@ -129,7 +145,6 @@ Links:
 
 Few things that could be improved:
 
-* included [Hugin](http://hugin.sourceforge.net/) template file is not perfect and bad seams will happen (especially for close objects),
 * there's no vignetting correction, better lens correction could be created,
 * panorama seams on stitched video are "flickering",
 * script could have few parameters added like: jpeg quality, EXIF tags update.
