@@ -28,14 +28,6 @@ Open link pointing to [localhost](http://localhost:8000/index.html).
 
 Note: this code has very little error control.
 
-# Libraries
-
-Code used:
-* [Valiant360](https://github.com/flimshaw/Valiant360).
-* [jQuery](http://jquery.com/).
-* [Three.js](http://threejs.org/).
-* [Font Awesome](http://fortawesome.github.io/Font-Awesome/).
-
 # video.js Copyright
 
 video.js copyright (https://github.com/videojs/video.js/blob/master/LICENSE)
