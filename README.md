@@ -8,7 +8,8 @@ Simple script to create equirectangular panoramic photos or videos from Samsung 
 
 Latest Changes:
 
-- 2017-06-11: added preliminary support for generation 2 of Gear360 (SM-R210).
+- 2017-06-11: added preliminary support for generation 2 of Gear360 (SM-R210), thanks
+sfrique for providing files.
 - 2017-06-10: support for wildcards, switched gallery to Pannellum, "automatic" gallery creation, no longer possible to set output filename (this is due to acceptance of wildcards/multiple files).
 Lots of changes so expect things not to work well (I did basic testing).
 - 2017-05-16: small update, added poorman's gallery in html.
