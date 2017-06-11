@@ -99,7 +99,7 @@ type ffmpeg >/dev/null 2>&1 || { echo >&2 "ffmpeg required but it's not installe
 FRAMESTEMPDIR=`mktemp -d -p .`
 OUTTEMPDIR=`mktemp -d`
 IMAGETMPL="image%05d.jpg"
-IMAGETMPL2="image%05d_pano.jpg"
+IMAGETMPLENC="image%05d_pano.jpg"
 PTOTMPL="gear360video.pto"
 TMPAUDIO="tmpaudio.aac"
 TMPVIDEO="tmpvideo.mp4"
@@ -119,7 +119,7 @@ done
 
 # Put stitched frames together
 echo "Recoding the video..."
-run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPL2" -r 30 -s 3840:1920 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
+run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPLENC" -r 30 -s 3840:1920 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
 
 echo "Extracting audio..."
 run_command notify-send -a $0 "Extracting audio..."
@@ -148,7 +148,8 @@ set FRAMESTEMPDIR=frames
 set OUTTEMPDIR=frames_stitched
 set PTOTMPL=gear360video.pto
 :: %% is an escape character (note: this will fail on wine's cmd.exe)
-set IMAGETMPL=image%%05d_pano.jpg
+set IMAGETMPL=image%%05d.jpg
+set IMAGETMPLENC=image%%05d_pano.jpg
 set TMPAUDIO=tmpaudio.aac
 set TMPVIDEO=tmpvideo.mp4
 
@@ -182,7 +183,7 @@ for %%f in (%FRAMESTEMPDIR%/*.jpg) do (
 )
 
 echo "Reencoding video..."
-"%FFMPEGPATH%/ffmpeg.exe" -y -f image2 -i %OUTTEMPDIR%/%IMAGETMPL% -r 30 -s 3840:1920 -vcodec libx264 %OUTTEMPDIR%/%TMPVIDEO%
+"%FFMPEGPATH%/ffmpeg.exe" -y -f image2 -i %OUTTEMPDIR%/%IMAGETMPLENC% -r 30 -s 3840:1920 -vcodec libx264 %OUTTEMPDIR%/%TMPVIDEO%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 echo "Extracting audio..."
