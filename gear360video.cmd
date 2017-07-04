@@ -22,8 +22,8 @@ DIR=$(dirname `which $0`)
 # Clean-up function
 clean_up() {
     echo "Removing temporary directories..."
-    if [ -d "$FRAMESTMPDIR" ]; then
-        rm -rf "$FRAMESTMPDIR"
+    if [ -d "$FRAMESTEMPDIR" ]; then
+        rm -rf "$FRAMESTEMPDIR"
     fi
     if [ -d "$OUTTEMPDIR" ]; then
         rm -rf "$OUTTEMPDIR"
