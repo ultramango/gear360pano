@@ -26,6 +26,8 @@ GALLERYDIR="html"
 GALLERYFILELIST="filelist.txt"
 # By default we will ignore files that have been processed
 IGNOREPROCESSED="yes"
+# Default blending program
+BLENDPROG="enblend"
 
 # Clean-up function
 clean_up() {
@@ -69,7 +71,8 @@ process_panorama() {
   echo "Processing input images (nona)"
   # We need to use run_command with many parameters, or $1 doesn't get
   # quoted correctly and we cannot use filenames with spaces
-  run_command  "nona" "-o" "$TEMPDIR/$OUTTMPNAME" \
+  run_command  "nona" \
+               "-o" "$TEMPDIR/$OUTTMPNAME" \
                "-m" "TIFF_m" \
                "-z" "LZW" \
                "$3" \
@@ -79,8 +82,14 @@ process_panorama() {
   echo "Stitching input images (enblend)"
   # We need to use run_command with many parameters,
   # or the directories don't get quoted correctly
-  run_command "enblend" "-o" "$2" \
-              "--compression=jpeg:$JPGQUALITY" \
+  if [ "$BLENDPROG" == "multiblend" ]; then
+    BLENDEXTRAOPTS="--quiet"
+  fi
+
+  run_command "$BLENDPROG" \
+              "$BLENDEXTRAOPTS" \
+              "--compression=$JPGQUALITY" \
+              "-o" "$2" \
               "$TEMPDIR/${OUTTMPNAME}0000.tif" \
               "$TEMPDIR/${OUTTMPNAME}0001.tif"
 
@@ -186,6 +195,10 @@ case $key in
     shift
     shift
     ;;
+  -m|--multiblend)
+    BLENDPROG="multiblend"
+    shift
+    ;;
   *)
     break
     ;;
@@ -267,12 +280,10 @@ exit 0
 
 rem http://stackoverflow.com/questions/673523/how-to-measure-execution-time-of-command-in-windows-command-line
 set start=%time%
-
-set HUGINPATH1=C:/Program Files/Hugin/bin
-set HUGINPATH2=C:/Program Files (x86)/Hugin/bin
+set HUGINPATH=C:/Program Files/Hugin/bin
+set HUGINPATH32=C:/Program Files (x86)/Hugin/bin
 set GALLERYDIR=html
 set GALLERYFILELIST=filelist.txt
-
 rem This is to avoid some weird bug (???) %~dp0 doesn't work in a loop (effect of shift?)
 set SCRIPTNAME=%0
 set SCRIPTPATH=%~dp0
@@ -287,6 +298,7 @@ set PTOJPGFILENAME=dummy.jpg
 set IGNOREPROCESSED=yes
 rem Default temporary directory
 set MYTEMPDIR=%TEMP%
+set BLENDPROG=enblend.exe
 
 rem Process arguments
 set PARAMCOUNT=0
@@ -327,6 +339,10 @@ if "%FIRSTCHAR%" == "/" (
       set MYTEMPDIR=%2
     )
   )
+  if /i "!SWITCH!" == "m" (
+    shift
+    set BLENDPROG=multiblend_x64.exe
+  )
 ) else (
   if %PARAMCOUNT% EQU 0 set PROTOINNAME=%_TMP%
   if %PARAMCOUNT% EQU 1 set PTOTMPL=%_TMP%
@@ -342,14 +358,16 @@ if "%PTOTMPL%" == "" (
   set PTOTMPL=%PTOTMPL_SM_C200%
 )
 
-rem Where's enblend? Prefer 64 bits
+rem Where's Hugin? Prefer 64 bits
 rem Haha, weird bug, it doesn't work when using brackets (spaces in path)
-if exist "%HUGINPATH1%/enblend.exe" goto HUGINOK
+if exist "%HUGINPATH%/nona.exe" goto HUGINOK
 rem 64 bits not found? Check x86
-if not exist "%HUGINPATH2%/enblend.exe" goto NOHUGIN
+if not exist "%HUGINPATH32%/nona.exe" goto NOHUGIN
 rem Found x86, overwrite original path
-set HUGINPATH1=%HUGINPATH2%
+set HUGINPATH=%HUGINPATH32%
 :HUGINOK
+rem Check blending software (now it can be different)
+if not exist "%HUGINPATH%/%BLENDPROG%" goto NOBLEND
 
 rem Warn early about the gallery
 if "%CREATEGALLERY%" == "yes" if not "%OUTDIR%" == "html\data" (
@@ -376,7 +394,7 @@ for %%f in (%PROTOINNAME%) do (
   )
 
   if "!PROCESSFILE!" == "yes" (
-    "%HUGINPATH1%/exiftool.exe" -s -s -s -Model !INNAME! > modelname.tmp
+    "%HUGINPATH%/exiftool.exe" -s -s -s -Model !INNAME! > modelname.tmp
     set /p MODELNAME=<modelname.tmp
     del modelname.tmp
     if "!MODELNAME!" == "SM-C200" set PTOTMPL=%PTOTMPL_SM_C200%
@@ -461,32 +479,35 @@ echo.
 goto eof
 
 :NOHUGIN
-
 echo.
 echo Hugin is not installed or installed in non-standard directory
-echo Was looking in: %HUGINPATH1%
-echo and: %HUGINPATH2%
+echo Was looking in: %HUGINPATH%
+echo and: %HUGINPATH32%
+goto eof
+
+:NOBLEND
+echo.
+echo Could not find requested blending program:
+echo %HUGINPATH%/%BLENDPROG%
+echo Please install missing software
 goto eof
 
 :NONAERROR
-
 echo nona failed, panorama not created
 goto eof
 
 :ENBLENDERROR
-
 echo enblend failed, panorama not created
 goto eof
 
 :PROCESSPANORAMA
-
 set LOCALINNAME=%1
 set LOCALOUTNAME=%2
 set LOCALPTOTMPL=%3
 
 rem Execute commands (as simple as it is)
 echo Processing input images (nona)
-"%HUGINPATH1%/nona.exe" -o %MYTEMPDIR%/%OUTTMPNAME% ^
+"%HUGINPATH%/nona.exe" -o %MYTEMPDIR%/%OUTTMPNAME% ^
               -m TIFF_m ^
               -z LZW ^
               %LOCALPTOTMPL% ^
@@ -495,7 +516,7 @@ echo Processing input images (nona)
 if %ERRORLEVEL% equ 1 goto NONAERROR
 
 echo Stitching input images (enblend)
-"%HUGINPATH1%/enblend.exe" -o %2 ^
+"%HUGINPATH%/enblend.exe" -o %2 ^
               --compression=jpeg:%JPGQUALITY% ^
               %MYTEMPDIR%/%OUTTMPNAME%0000.tif ^
               %MYTEMPDIR%/%OUTTMPNAME%0001.tif
@@ -505,7 +526,7 @@ rem Check if we have exiftool...
 echo Setting EXIF data (exiftool)
 set IMG_WIDTH=7776
 set IMG_HEIGHT=3888
-"%HUGINPATH1%/exiftool.exe" -ProjectionType=equirectangular ^
+"%HUGINPATH%/exiftool.exe" -ProjectionType=equirectangular ^
                             -m ^
                             -q ^
                             -TagsFromFile "%LOCALINNAME%" ^
@@ -529,5 +550,3 @@ if "%ERRORLEVEL%" EQU 1 echo Setting EXIF failed, ignoring
 rem There are problems with -delete_original in exiftool, manually remove the file
 del "%LOCALOUTNAME%_original"
 exit /b 0
-
-:eof
