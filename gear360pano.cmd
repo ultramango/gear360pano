@@ -58,9 +58,12 @@ run_command() {
 # 2. output filename
 # 3. template filename
 process_panorama() {
-  # Create temporary directory locally to stay compatible with other OSes
-  # Not using '-p .' might cause some problems on non-unix systems (cygwin?)
-  TEMPDIR=`mktemp -d`
+  # Create temporary directory
+  if [ -n "$TEMPDIRPREFIX" ]; then
+    TEMPDIR=`mktemp -d -p $TEMPDIRPREFIX`
+  else
+    TEMPDIR=`mktemp -d`
+  fi
 
   # Stitch panorama (same file twice as input)
   echo "Processing input images (nona)"
@@ -123,12 +126,16 @@ print_help() {
   echo -e "be a wildcard (ex. *.JPG). hugintemplate is optional.\n"
   echo "Panorama file will be written to a file with appended _pano,"
   echo -e "example: 360_010.JPG -> 360_010_pano.JPG\n"
-  echo "-q|--quality will set the JPEG quality to quality"
-  echo "-o|--output  will set the output directory of panoramas"
-  echo "             default: html/data"
-  echo "-g|--gallery update gallery file list"
   echo "-a|--process-all process all files, by default processed"
   echo "             panoaramas are skipped (in output directory)"
+  echo "-g|--gallery update gallery file list"
+  echo "-m|--multiblend use multiblend (http://horman.net/multiblend/)"
+  echo "             instead of enblend for final stitching"
+  echo "-o|--output  will set the output directory of panoramas"
+  echo "             default: html/data"
+  echo "-q|--quality will set the JPEG quality to quality"
+  echo "-t|--temp    set temporary directory (default: use system's"
+  echo "             temporary directory)"
   echo "-h|--help    prints help"
 }
 
@@ -168,6 +175,15 @@ case $key in
     ;;
   -a|--process-all)
     IGNOREPROCESSED="no"
+    shift
+    ;;
+  -t|--temp)
+    if [ -d "$2" ]; then
+      TEMPDIRPREFIX="$2"
+    else
+      echo "Given temporary ($2) is not a directory, using system default"
+    fi
+    shift
     shift
     ;;
   *)
@@ -269,6 +285,8 @@ set OUTDIR=html\data
 set JPGQUALITY=97
 set PTOJPGFILENAME=dummy.jpg
 set IGNOREPROCESSED=yes
+rem Default temporary directory
+set MYTEMPDIR=%TEMP%
 
 rem Process arguments
 set PARAMCOUNT=0
@@ -299,6 +317,15 @@ if "%FIRSTCHAR%" == "/" (
   )
   if /i "!SWITCH!" == "a" (
     set IGNOREPROCESSED=no
+  )
+  if /i "!SWITCH!" == "t" (
+    shift
+    if not exist %2 (
+      echo Directory %2 does not exist, using system default
+    )
+    else (
+      set MYTEMPDIR=%2
+    )
   )
 ) else (
   if %PARAMCOUNT% EQU 0 set PROTOINNAME=%_TMP%
@@ -419,12 +446,16 @@ echo.
 echo Panorama will be written to a file with appended _pano,
 echo example: 360_010.JPG -> 360_010_pano.JPG
 echo.
-echo /q sets output jpeg quality
-echo /o sets output directory for stitched panoramas
-echo    default: html\data
-echo /g update gallery file list
 echo /a process all files, by default already processed images
 echo    are ignored (in output directory)
+echo /g update gallery file list
+echo /m use multiblend (http://horman.net/multiblend/) instead
+echo    of enblend for final image stitching
+echo /o sets output directory for stitched panoramas
+echo    default: html\data
+echo /q sets output jpeg quality
+echo /t sets temporary directory (default: use systems' default
+echo    temporary directory)
 echo /h prints help
 echo.
 goto eof
@@ -455,7 +486,7 @@ set LOCALPTOTMPL=%3
 
 rem Execute commands (as simple as it is)
 echo Processing input images (nona)
-"%HUGINPATH1%/nona.exe" -o %TEMP%/%OUTTMPNAME% ^
+"%HUGINPATH1%/nona.exe" -o %MYTEMPDIR%/%OUTTMPNAME% ^
               -m TIFF_m ^
               -z LZW ^
               %LOCALPTOTMPL% ^
@@ -466,8 +497,8 @@ if %ERRORLEVEL% equ 1 goto NONAERROR
 echo Stitching input images (enblend)
 "%HUGINPATH1%/enblend.exe" -o %2 ^
               --compression=jpeg:%JPGQUALITY% ^
-              %TEMP%/%OUTTMPNAME%0000.tif ^
-              %TEMP%/%OUTTMPNAME%0001.tif
+              %MYTEMPDIR%/%OUTTMPNAME%0000.tif ^
+              %MYTEMPDIR%/%OUTTMPNAME%0001.tif
 if %ERRORLEVEL% equ 1 goto ENBLENDERROR
 
 rem Check if we have exiftool...
