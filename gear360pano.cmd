@@ -15,7 +15,7 @@ goto :CMDSCRIPT
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
 SCRIPTNAME=$0
-OUTDIR="html/data"
+OUTDIR="$DIR/html/data"
 OUTTMPNAME="out"
 PTOTMPL_SM_C200="$DIR/gear360sm-c200.pto"
 PTOTMPL_SM_R210="$DIR/gear360sm-r210.pto"
@@ -31,7 +31,16 @@ BLENDPROG="enblend"
 # Default - we use GPU
 EXTRANONAOPTIONS="-g"
 EXTRAENBLENDOPTIONS="--gpu"
+# Debug
+DEBUG=""
 
+# Debug, arguments:
+# 1. Text to print
+print_debug() {
+  if [ "DEBUG" == "yes" ]; then
+    echo "DEBUG: $@"
+  fi
+}
 
 # Clean-up function
 clean_up() {
@@ -45,7 +54,15 @@ clean_up() {
 # Source:
 # http://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 run_command() {
-  "$@"
+  # Remove empty arguments (it will confuse the executed command)
+  cmd=("$@")
+  for i in "${!cmd[@]}"; do
+    [ -n "${cmd[$i]}" ] || unset "cmd[$i]"
+  done
+
+  print_debug "Running command: " "${cmd[@]}"
+  "${cmd[@]}"
+
   local status=$?
   if [ $status -ne 0 ]; then
     echo "Error while running $1" >&2
@@ -64,6 +81,8 @@ run_command() {
 # 2. output filename
 # 3. template filename
 process_panorama() {
+  print_debug "process_panorama()"
+  print_debug "$@"
   # Create temporary directory
   if [ -n "$TEMPDIRPREFIX" ]; then
     TEMPDIR=`mktemp -d -p $TEMPDIRPREFIX`
@@ -311,7 +330,7 @@ set PTOTMPL_SM_C200="%SCRIPTPATH%gear360sm-c200.pto"
 set PTOTMPL_SM_R210="%SCRIPTPATH%gear360sm-r210.pto"
 set INNAME=
 set PTOTMPL=
-set OUTDIR=html\data
+set OUTDIR=%SCRIPTPATH%\html\data
 set JPGQUALITY=97
 set PTOJPGFILENAME=dummy.jpg
 set IGNOREPROCESSED=yes
@@ -321,6 +340,8 @@ set BLENDPROG=enblend.exe
 rem By default use gpu
 set EXTRANONAOPTIONS="-g"
 set EXTRAENBLENDOPTIONS="--gpu"
+rem Debug enable/disable
+set DEBUG=""
 
 rem Process arguments
 set PARAMCOUNT=0
@@ -590,4 +611,12 @@ if "%ERRORLEVEL%" EQU 1 echo Setting EXIF failed, ignoring
 
 rem There are problems with -delete_original in exiftool, manually remove the file
 del "%LOCALOUTNAME%_original"
+exit /b 0
+
+:PRINT_DEBUG
+
+if "%DEBUG%" == "yes" (
+  echo %1 %2 %3 %4 %5 %6 %7 %8 %9
+)
+
 exit /b 0
