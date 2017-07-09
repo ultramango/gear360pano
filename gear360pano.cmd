@@ -5,6 +5,8 @@ goto :CMDSCRIPT
 
 # This is a small script to stitch panorama images produced  by Samsung Gear360
 #
+# https://github.com/ultramango/gear360pano
+#
 # Trick with Win/Linux from here:
 # http://stackoverflow.com/questions/17510688/single-script-to-run-in-both-windows-batch-and-linux-bash
 
@@ -22,6 +24,8 @@ PTOJPGFILENAME="dummy.jpg"
 GALLERYDIR="html"
 # Note, this file is inside GALLERYDIR
 GALLERYFILELIST="filelist.txt"
+# By default we will ignore files that have been processed
+IGNOREPROCESSED="yes"
 
 # Clean-up function
 clean_up() {
@@ -50,9 +54,9 @@ run_command() {
 }
 
 # Function that processes panorama, arguments:
-# - input filename
-# - output filename
-# - template filename
+# 1. input filename
+# 2. output filename
+# 3. template filename
 process_panorama() {
   # Create temporary directory locally to stay compatible with other OSes
   # Not using '-p .' might cause some problems on non-unix systems (cygwin?)
@@ -121,9 +125,10 @@ print_help() {
   echo -e "example: 360_010.JPG -> 360_010_pano.JPG\n"
   echo "-q|--quality will set the JPEG quality to quality"
   echo "-o|--output  will set the output directory of panoramas"
-  echo "             default: current directory"
-  echo "-g|--gallery update gallery file list, best with"
-  echo "             -o html/data"
+  echo "             default: html/data"
+  echo "-g|--gallery update gallery file list"
+  echo "-a|--process-all process all files, by default processed"
+  echo "             panoaramas are skipped (in output directory)"
   echo "-h|--help    prints help"
 }
 
@@ -158,7 +163,11 @@ case $key in
     shift
     ;;
   -g|--gallery)
-    CREATEGALLERY=yes
+    CREATEGALLERY="yes"
+    shift
+    ;;
+  -a|--process-all)
+    IGNOREPROCESSED="no"
     shift
     ;;
   *)
@@ -186,7 +195,18 @@ fi
 
 for i in $1
 do
-  # Detect camera model
+  OUTNAMEPROTO=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
+  OUTNAME=`basename $OUTNAMEPROTO`
+  OUTNAMEFULL=$OUTDIR/$OUTNAME
+
+  # Check if this already processed panorama
+  # https://stackoverflow.com/questions/229551/string-contains-in-bash
+  if [ $IGNOREPROCESSED == "yes" ] && [ -e "$OUTNAMEFULL" ]; then
+    echo "$i already processed, skipping... (override with -a)"
+    continue
+  fi
+
+  # Detect camera model for each image
   CAMERAMODEL=`exiftool -s -s -s -Model $i`
   case $CAMERAMODEL in
     SM-C200)
@@ -199,10 +219,9 @@ do
       PTOTMPL=$PTOTMPL_SM_C200
       ;;
   esac
-  OUTNAMEPROTO=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
-  OUTNAME=`basename $OUTNAMEPROTO`
+
   echo "Processing file: $i"
-  process_panorama $i $OUTDIR/$OUTNAME $PTOTMPL
+  process_panorama $i $OUTNAMEFULL $PTOTMPL
 done
 
 if [ "$CREATEGALLERY" == "yes" ]; then
@@ -220,7 +239,7 @@ fi
 ENDTS=`date +%s`
 RUNTIME=$((ENDTS-STARTTS))
 echo "Processing took: $RUNTIME s"
-echo "Processed files should be in $OUTDIR"
+echo "Processed files are in $OUTDIR"
 
 # Uncomment this if you don't do videos; otherwise, it is quite annoying
 #notify-send "Panorama written to $OUTNAME, took: $RUNTIME s"
@@ -249,6 +268,7 @@ set PTOTMPL=
 set OUTDIR=html\data
 set JPGQUALITY=97
 set PTOJPGFILENAME=dummy.jpg
+set IGNOREPROCESSED=yes
 
 rem Process arguments
 set PARAMCOUNT=0
@@ -276,6 +296,9 @@ if "%FIRSTCHAR%" == "/" (
   )
   if /i "!SWITCH!" == "g" (
     set CREATEGALLERY=yes
+  )
+  if /i "!SWITCH!" == "a" (
+    set IGNOREPROCESSED=no
   )
 ) else (
   if %PARAMCOUNT% EQU 0 set PROTOINNAME=%_TMP%
@@ -311,17 +334,30 @@ if "%CREATEGALLERY%" == "yes" if not "%OUTDIR%" == "html\data" (
 )
 
 for %%f in (%PROTOINNAME%) do (
-  set OUTNAME=%OUTDIR%\%%~nf_pano.jpg
   set INNAME=%%f
+  set OUTNAME=%OUTDIR%\%%~nf_pano.jpg
+  rem Why a flag? No continue for "for", use goto, labels
+  rem inside for break the loop, use if and "and/or", doesn't
+  rem work (can't use poorman's and - double if)
+  set PROCESSFILE=yes
 
-  "%HUGINPATH1%/exiftool.exe" -s -s -s -Model !INNAME! > modelname.tmp
-  set /p MODELNAME=<modelname.tmp
-  del modelname.tmp
-  if "!MODELNAME!" == "SM-C200" set PTOTMPL=%PTOTMPL_SM_C200%
-  if "!MODELNAME!" == "SM-R210" set PTOTMPL=%PTOTMPL_SM_R210%
+  rem Check if this file was already processed
+  if "%IGNOREPROCESSED%" == "yes" if exist "!OUTNAME!" (
+    rem Can't use brackets for "override with /a" - breaks stuff
+    echo File !INNAME! already processed, skipping... override with /a
+    set PROCESSFILE=no
+  )
 
-  echo Processing file: !INNAME!
-  call :PROCESSPANORAMA !INNAME! !OUTNAME! !PTOTMPL!
+  if "!PROCESSFILE!" == "yes" (
+    "%HUGINPATH1%/exiftool.exe" -s -s -s -Model !INNAME! > modelname.tmp
+    set /p MODELNAME=<modelname.tmp
+    del modelname.tmp
+    if "!MODELNAME!" == "SM-C200" set PTOTMPL=%PTOTMPL_SM_C200%
+    if "!MODELNAME!" == "SM-R210" set PTOTMPL=%PTOTMPL_SM_R210%
+
+    echo Processing file: !INNAME!
+    call :PROCESSPANORAMA !INNAME! !OUTNAME! !PTOTMPL!
+  )
 )
 
 if "%CREATEGALLERY%" == "yes" (
@@ -363,7 +399,7 @@ rem mission accomplished
 set /a totalsecs = %hours%*3600 + %mins%*60 + %secs%
 
 echo Processing took: %totalsecs% s
-echo Processed files should be in %OUTDIR%
+echo Processed files are in %OUTDIR%
 
 goto eof
 
@@ -385,9 +421,10 @@ echo example: 360_010.JPG -> 360_010_pano.JPG
 echo.
 echo /q sets output jpeg quality
 echo /o sets output directory for stitched panoramas
-echo    default: current directory
-echo /g update gallery file list, best with
-echo    /o html\data
+echo    default: html\data
+echo /g update gallery file list
+echo /a process all files, by default already processed images
+echo    are ignored (in output directory)
 echo /h prints help
 echo.
 goto eof
