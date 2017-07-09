@@ -18,116 +18,118 @@ GOTO :CMDSCRIPT
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
+FRAMESTEMPDIR=`mktemp -d`
+OUTTEMPDIR=`mktemp -d`
+IMAGETMPL="image%05d.jpg"
+IMAGETMPLENC="image%05d_pano.jpg"
+PTOTMPL="$DIR/gear360video.pto"
+TMPAUDIO="tmpaudio.aac"
+TMPVIDEO="tmpvideo.mp4"
+# Debug
+DEBUG="yes"
+
+# Debug, arguments:
+# 1. Text to print
+print_debug() {
+  if [ "$DEBUG" == "yes" ]; then
+    echo "DEBUG: $@"
+  fi
+}
 
 # Clean-up function
 clean_up() {
-    echo "Removing temporary directories..."
-    if [ -d "$FRAMESTEMPDIR" ]; then
-        rm -rf "$FRAMESTEMPDIR"
-    fi
-    if [ -d "$OUTTEMPDIR" ]; then
-        rm -rf "$OUTTEMPDIR"
-    fi
+  echo "Removing temporary directories..."
+  if [ -d "$FRAMESTEMPDIR" ]; then
+    print_debug "Removing frames directory: $FRAMESTEMPDIR"
+    rm -rf "$FRAMESTEMPDIR"
+  fi
+  if [ -d "$OUTTEMPDIR" ]; then
+    print_debug "Removing output directory: $OUTTEMPDIR"
+    rm -rf "$OUTTEMPDIR"
+  fi
 }
 
 # Function to check if a command fails
 # http://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 run_command() {
-    "$@"
-    local status=$?
-    if [ $status -ne 0 ]; then
-        echo "Error while running $1" >&2
-        if [ $1 != "notify-send" ]; then
-           # Display error in a nice graphical popup if available
-           run_command notify-send -a $0 "Error while running $1"
-        fi
-        clean_up
-        exit 1
+  # Remove empty arguments (it will confuse the executed command)
+  cmd=("$@")
+  for i in "${!cmd[@]}"; do
+    [ -n "${cmd[$i]}" ] || unset "cmd[$i]"
+  done
+
+  print_debug "Running command: " "${cmd[@]}"
+  "${cmd[@]}"
+  local status=$?
+  if [ $status -ne 0 ]; then
+    echo "Error while running $1" >&2
+    if [ $1 != "notify-send" ]; then
+       # Display error in a nice graphical popup if available
+       run_command notify-send -a $0 "Error while running $1"
     fi
-    return $status
-}
-
-# Do stuff to make this thing run on various POSIX operating systems
-# http://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
-os_check() {
-    case "$(uname -s)" in
-
-    Darwin)
-        ;;
-
-    Linux)
-        ;;
-
-    CYGWIN*|MINGW32*|MSYS*)
-        # Naive approach, should read Hugin installation
-        # path from registry or something...
-        export PATH=$PATH:"/cygdrive/c/Program Files (x86)/Hugin/bin":"/cygdrive/c/Program Files/Hugin/bin"
-        ;;
-    *)
-        ;;
-    esac
+    clean_up
+    exit 1
+  fi
+  return $status
 }
 
 # Check argument(s)
 if [ -z "$1" ]; then
-    echo "Small script to stitch panoramic videos."
-    echo -e "Script originally writen for Samsung Gear 360.\n"
-    echo -e "Usage:\n$0 inputdir [outputfile]\n"
-    echo "Where inputfile is a panoramic video file,"
-    echo "output parameter is optional."
-    run_command notify-send -a $0 "Please provide an input file."
-    sleep 2
-    exit 1
+  echo "Small script to stitch panoramic videos."
+  echo -e "Script originally writen for Samsung Gear 360.\n"
+  echo -e "Usage:\n$0 inputdir [outputfile]\n"
+  echo "Where inputfile is a panoramic video file,"
+  echo "output parameter is optional."
+  run_command notify-send -a $0 "Please provide an input file."
+  sleep 2
+  exit 1
 fi
 
 # Output name as second argument
 if [ -z "$2" ]; then
-    # If invoked by nautilus open-with, we need to remember the proper directory in the outname
-    OUTNAME=`dirname "$1"`/`basename "${1%.*}"`_pano.mp4
-    echo "DEBUG: output filename: $OUTNAME"
+  # If invoked by nautilus open-with, we need to remember the proper directory in the outname
+  OUTNAME=`dirname "$1"`/`basename "${1%.*}"`_pano.mp4
+  print_debug "Output filename: $OUTNAME"
 fi
-
-# OS check, custom settings for various OSes
-os_check
 
 # Check if we have the software to do it
 # http://stackoverflow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
 type ffmpeg >/dev/null 2>&1 || { echo >&2 "ffmpeg required but it's not installed. Aborting."; exit 1; }
-# TODO: add check for gear360pano.cmd script
 
 # On some systems not using '-p .' (temp in current dir) might cause problems
-FRAMESTEMPDIR=`mktemp -d -p .`
-OUTTEMPDIR=`mktemp -d`
-IMAGETMPL="image%05d.jpg"
-IMAGETMPLENC="image%05d_pano.jpg"
-PTOTMPL="gear360video.pto"
-TMPAUDIO="tmpaudio.aac"
-TMPVIDEO="tmpvideo.mp4"
 STARTTS=`date +%s`
 
 # Extract frames from video
 run_command notify-send -a $0 "Starting panoramic video stitching..."
 echo "Extracting frames from video (this might take a while)..."
-run_command ffmpeg -y -i "$1" "$FRAMESTEMPDIR/$IMAGETMPL"
+run_command "ffmpeg" "-y" "-i" "$1" "$FRAMESTEMPDIR/$IMAGETMPL"
 
 # Stitch frames
 echo "Stitching frames..."
 for i in $FRAMESTEMPDIR/*.jpg; do
-    echo Frame: $i
-    run_command "/bin/bash" "$DIR/gear360pano.cmd" "-m" "-o" "$OUTTEMPDIR" "$i" "$PTOTMPL"
+  echo Frame: $i
+  run_command "$DIR/gear360pano.cmd" "-m" "-o" "$OUTTEMPDIR" "$i" "$PTOTMPL"
 done
 
 # Put stitched frames together
 echo "Recoding the video..."
 run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPLENC" -r 30 -s 3840:1920 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
 
-echo "Extracting audio..."
-run_command notify-send -a $0 "Extracting audio..."
-run_command ffmpeg -y -i "$1" -vn -acodec copy "$OUTTEMPDIR/$TMPAUDIO"
+# Check if there's an audio (https://stackoverflow.com/questions/21446804/find-if-video-file-has-audio-present-in-it)
+ISAUDIO=`ffprobe -v fatal -of default=nw=1:nk=1 -show_streams -select_streams a -show_entries stream=codec_type "$1"`
 
-echo "Merging audio..."
-run_command notify-send -a $0 "Merging audio..."
-run_command ffmpeg -y -i "$OUTTEMPDIR/$TMPVIDEO" -i "$OUTTEMPDIR/$TMPAUDIO" -c:v copy -c:a aac -strict experimental "$OUTNAME"
+if [ -n "$ISAUDIO" ]; then
+  echo "Extracting audio..."
+  run_command notify-send -a $0 "Extracting audio..."
+  run_command ffmpeg -y -i "$1" -vn -acodec copy "$OUTTEMPDIR/$TMPAUDIO"
+
+  echo "Merging audio..."
+  run_command notify-send -a $0 "Merging audio..."
+  run_command ffmpeg -y -i "$OUTTEMPDIR/$TMPVIDEO" -i "$OUTTEMPDIR/$TMPAUDIO" -c:v copy -c:a aac -strict experimental "$OUTNAME"
+else
+  print_debug "No audio detected"
+  mv "$OUTTEMPDIR/$TMPVIDEO" "$OUTNAME"
+fi
 
 # Remove temporary directories
 clean_up
@@ -163,7 +165,6 @@ if exist "%FFMPEGPATH%/ffmpeg.exe" goto FFMPEGOK
 goto NOFFMPEG
 
 :FFMPEGOK
-
 :: Create temporary directories
 mkdir %FRAMESTEMPDIR%
 mkdir %OUTTEMPDIR%
@@ -199,7 +200,6 @@ if not [%2] == [] goto SETNAMEOK
 set OUTNAME="%~n1_pano.mp4"
 
 :SETNAMEOK
-
 "%FFMPEGPATH%/ffmpeg.exe" -y -i %OUTTEMPDIR%/%TMPVIDEO% -i %OUTTEMPDIR%/%TMPAUDIO% -c:v copy -c:a aac -strict experimental %OUTNAME%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
@@ -208,10 +208,9 @@ del /f /q %FRAMESTEMPDIR%
 del /f /q %OUTTEMPDIR%
 
 echo Video written to %OUTNAME%
-goto END
+goto eof
 
 :NOARGS
-
 echo Script to stitch raw video panorama files, raw
 echo meaning two fisheye images side by side.
 echo.
@@ -222,17 +221,20 @@ echo %0 inputfile [outputfile]
 echo.
 echo Where inputfile is a panorama file from camera,
 echo output parameter is optional
-goto END
+goto eof
 
 :NOFFMPEG
-
 echo ffmpeg was not found in %FFMPEGPATH%, download from: https://ffmpeg.zeranoe.com/builds/
 echo and unpack to program files directory
-goto END
+goto eof
 
 :FFMPEGERROR
-
 echo ffmpeg failed, video not created
-goto END
+goto eof
 
-:END
+:PRINT_DEBUG
+if "%DEBUG%" == "yes" (
+  echo %1 %2 %3 %4 %5 %6 %7 %8 %9
+)
+
+exit /b 0

@@ -32,12 +32,12 @@ BLENDPROG="enblend"
 EXTRANONAOPTIONS="-g"
 EXTRAENBLENDOPTIONS="--gpu"
 # Debug
-DEBUG=""
+DEBUG="yes"
 
 # Debug, arguments:
 # 1. Text to print
 print_debug() {
-  if [ "DEBUG" == "yes" ]; then
+  if [ "$DEBUG" == "yes" ]; then
     echo "DEBUG: $@"
   fi
 }
@@ -82,7 +82,7 @@ run_command() {
 # 3. template filename
 process_panorama() {
   print_debug "process_panorama()"
-  print_debug "$@"
+  print_debug "Args: $@"
   # Create temporary directory
   if [ -n "$TEMPDIRPREFIX" ]; then
     TEMPDIR=`mktemp -d -p $TEMPDIRPREFIX`
@@ -172,10 +172,10 @@ print_help() {
   echo "-m|--multiblend use multiblend (http://horman.net/multiblend/)"
   echo "             instead of enblend for final stitching"
   echo "-n|--no-gpu  do not use GPU (safer but slower)"
-  echo "-o|--output  will set the output directory of panoramas"
+  echo "-o|--output DIR will set the output directory of panoramas"
   echo "             default: html/data"
-  echo "-q|--quality will set the JPEG quality to quality"
-  echo "-t|--temp    set temporary directory (default: use system's"
+  echo "-q|--quality QUALITY will set the JPEG quality to quality"
+  echo "-t|--temp DIR set temporary directory (default: use system's"
   echo "             temporary directory)"
   echo "-h|--help    prints help"
 }
@@ -273,19 +273,25 @@ do
     continue
   fi
 
-  # Detect camera model for each image
-  CAMERAMODEL=`exiftool -s -s -s -Model $i`
-  case $CAMERAMODEL in
-    SM-C200)
-      PTOTMPL=$PTOTMPL_SM_C200
-      ;;
-    SM-R210)
-      PTOTMPL=$PTOTMPL_SM_R210
-      ;;
-    *)
-      PTOTMPL=$PTOTMPL_SM_C200
-      ;;
-  esac
+  # Is ther a pto override?
+  if [ -n "$2" ]; then
+    PTOTMPL="$2"
+  else
+    # Detect camera model for each image
+    CAMERAMODEL=`exiftool -s -s -s -Model $i`
+    print_debug "Camera model: $CAMERAMODEL"
+    case $CAMERAMODEL in
+      SM-C200)
+        PTOTMPL=$PTOTMPL_SM_C200
+        ;;
+      SM-R210)
+        PTOTMPL=$PTOTMPL_SM_R210
+        ;;
+      *)
+        PTOTMPL=$PTOTMPL_SM_C200
+        ;;
+    esac
+  fi
 
   echo "Processing file: $i"
   process_panorama $i $OUTNAMEFULL $PTOTMPL
@@ -430,6 +436,7 @@ if "%CREATEGALLERY%" == "yes" if not "%OUTDIR%" == "html\data" (
 for %%f in (%PROTOINNAME%) do (
   set INNAME=%%f
   set OUTNAME=%OUTDIR%\%%~nf_pano.jpg
+
   rem Why a flag? No continue for "for", use goto, labels
   rem inside for break the loop, use if and "and/or", doesn't
   rem work (can't use poorman's and - double if)
@@ -446,11 +453,13 @@ for %%f in (%PROTOINNAME%) do (
     "%HUGINPATH%/exiftool.exe" -s -s -s -Model !INNAME! > modelname.tmp
     set /p MODELNAME=<modelname.tmp
     del modelname.tmp
-    if "!MODELNAME!" == "SM-C200" set PTOTMPL=%PTOTMPL_SM_C200%
-    if "!MODELNAME!" == "SM-R210" set PTOTMPL=%PTOTMPL_SM_R210%
+    if "%PTOTMPL%" == "" (
+      if "!MODELNAME!" == "SM-C200" set LOCALPTOTMPL=%PTOTMPL_SM_C200%
+      if "!MODELNAME!" == "SM-R210" set LOCALPTOTMPL=%PTOTMPL_SM_R210%
+    )
 
     echo Processing file: !INNAME!
-    call :PROCESSPANORAMA !INNAME! !OUTNAME! !PTOTMPL!
+    call :PROCESSPANORAMA !INNAME! !OUTNAME! !LOCALPTOTMPL!
   )
 )
 
