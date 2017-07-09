@@ -114,7 +114,7 @@ run_command ffmpeg -y -i "$1" "$FRAMESTEMPDIR/$IMAGETMPL"
 echo "Stitching frames..."
 for i in $FRAMESTEMPDIR/*.jpg; do
     echo Frame: $i
-    run_command "/bin/bash" "$DIR/gear360pano.cmd" "-o" "$OUTTEMPDIR" "$i" "$PTOTMPL"
+    run_command "/bin/bash" "$DIR/gear360pano.cmd" "-m" "-o" "$OUTTEMPDIR" "$i" "$PTOTMPL"
 done
 
 # Put stitched frames together
@@ -179,7 +179,7 @@ for %%f in (%FRAMESTEMPDIR%/*.jpg) do (
 :: For whatever reason (this has to be at the beginning of the line!)
   echo Processing frame %FRAMESTEMPDIR%\%%f
 :: TODO: There should be some error checking
-  call gear360pano.cmd /o %OUTTEMPDIR% %FRAMESTEMPDIR%\%%f %PTOTMPL%
+  call gear360pano.cmd /m /o %OUTTEMPDIR% %FRAMESTEMPDIR%\%%f %PTOTMPL%
 )
 
 echo "Reencoding video..."
