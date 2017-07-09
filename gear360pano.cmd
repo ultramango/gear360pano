@@ -28,6 +28,10 @@ GALLERYFILELIST="filelist.txt"
 IGNOREPROCESSED="yes"
 # Default blending program
 BLENDPROG="enblend"
+# Default - we use GPU
+EXTRANONAOPTIONS="-g"
+EXTRAENBLENDOPTIONS="--gpu"
+
 
 # Clean-up function
 clean_up() {
@@ -72,6 +76,7 @@ process_panorama() {
   # We need to use run_command with many parameters, or $1 doesn't get
   # quoted correctly and we cannot use filenames with spaces
   run_command  "nona" \
+               "$EXTRANONAOPTIONS" \
                "-o" "$TEMPDIR/$OUTTMPNAME" \
                "-m" "TIFF_m" \
                "-z" "LZW" \
@@ -79,15 +84,22 @@ process_panorama() {
                "$1" \
                "$1"
 
-  echo "Stitching input images (enblend)"
-  # We need to use run_command with many parameters,
-  # or the directories don't get quoted correctly
+  echo "Stitching input images"
+
+  # TODO: possibly some clean up in extra arguments handling
   if [ "$BLENDPROG" == "multiblend" ]; then
-    BLENDEXTRAOPTS="--quiet"
+    # Note, there's a weird bug that multiblend will use
+    # one space character to separate argument
+    EXTRABLENDOPTS="--quiet"
+  fi
+
+  # Add extra options for enblend (ex. gpu)
+  if [ "$BLENDPROG" == "enblend" ]; then
+    EXTRABLENDOPTS="$EXTRAENBLENDOPTIONS"
   fi
 
   run_command "$BLENDPROG" \
-              "$BLENDEXTRAOPTS" \
+              "$EXTRABLENDOPTS" \
               "--compression=$JPGQUALITY" \
               "-o" "$2" \
               "$TEMPDIR/${OUTTMPNAME}0000.tif" \
@@ -140,6 +152,7 @@ print_help() {
   echo "-g|--gallery update gallery file list"
   echo "-m|--multiblend use multiblend (http://horman.net/multiblend/)"
   echo "             instead of enblend for final stitching"
+  echo "-n|--no-gpu  do not use GPU (safer but slower)"
   echo "-o|--output  will set the output directory of panoramas"
   echo "             default: html/data"
   echo "-q|--quality will set the JPEG quality to quality"
@@ -197,6 +210,12 @@ case $key in
     ;;
   -m|--multiblend)
     BLENDPROG="multiblend"
+    shift
+    ;;
+  -n|--no-gpu)
+    # Clear use GPU options
+    EXTRANONAOPTIONS=""
+    EXTRAENBLENDOPTIONS=""
     shift
     ;;
   *)
@@ -299,6 +318,9 @@ set IGNOREPROCESSED=yes
 rem Default temporary directory
 set MYTEMPDIR=%TEMP%
 set BLENDPROG=enblend.exe
+rem By default use gpu
+set EXTRANONAOPTIONS="-g"
+set EXTRAENBLENDOPTIONS="--gpu"
 
 rem Process arguments
 set PARAMCOUNT=0
@@ -342,6 +364,12 @@ if "%FIRSTCHAR%" == "/" (
   if /i "!SWITCH!" == "m" (
     shift
     set BLENDPROG=multiblend_x64.exe
+  )
+  if /i "!SWITCH!" == "n" (
+    shift
+    rem Clear any options enabling usage of gpu
+    set EXTRANONAOPTIONS=""
+    set EXTRAENBLENDOPTIONS=""
   )
 ) else (
   if %PARAMCOUNT% EQU 0 set PROTOINNAME=%_TMP%
@@ -507,7 +535,9 @@ set LOCALPTOTMPL=%3
 
 rem Execute commands (as simple as it is)
 echo Processing input images (nona)
-"%HUGINPATH%/nona.exe" -o %MYTEMPDIR%/%OUTTMPNAME% ^
+"%HUGINPATH%/nona.exe" ^
+              %EXTRANONAOPTIONS% ^
+              -o %MYTEMPDIR%/%OUTTMPNAME% ^
               -m TIFF_m ^
               -z LZW ^
               %LOCALPTOTMPL% ^
@@ -515,9 +545,20 @@ echo Processing input images (nona)
               "%LOCALINNAME%"
 if %ERRORLEVEL% equ 1 goto NONAERROR
 
-echo Stitching input images (enblend)
-"%HUGINPATH%/enblend.exe" -o %2 ^
-              --compression=jpeg:%JPGQUALITY% ^
+rem Extra options for multiblend
+if [ "%BLENDPROG%" == "multiblend_x64.exe" ]; then
+  set EXTRABLENDOPTS="--quiet"
+fi
+rem Add extra options for enblend (ex. gpu)
+if [ "$BLENDPROG" == "enblend.exe" ]; then
+  set EXTRABLENDOPTS="%EXTRAENBLENDOPTIONS%"
+fi
+
+echo Stitching input images
+"%HUGINPATH%/%BLENDPROG%" ^
+              %EXTRABLENDOPTS% ^
+              --compression=%JPGQUALITY% ^
+              -o %2 ^
               %MYTEMPDIR%/%OUTTMPNAME%0000.tif ^
               %MYTEMPDIR%/%OUTTMPNAME%0001.tif
 if %ERRORLEVEL% equ 1 goto ENBLENDERROR
