@@ -6,10 +6,7 @@ GOTO :CMDSCRIPT
 # This is a small script to stitch panorama videos produced
 # by Samsung Gear360
 #
-# TODOs:
-# - output file name is currently static
-# - add check for gear360pano script
-# - ffmpeg and jpg or png?
+# https://github.com/ultramango/gear360pano
 #
 # Trick with Win/Linux from here:
 # http://stackoverflow.com/questions/17510688/single-script-to-run-in-both-windows-batch-and-linux-bash
