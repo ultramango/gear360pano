@@ -1,6 +1,6 @@
 :<<"::IGNORE_THIS_LINE"
-@ECHO OFF
-GOTO :CMDSCRIPT
+@echo off
+goto :CMDSCRIPT
 ::IGNORE_THIS_LINE
 
 # This is a small script to stitch panorama videos produced
@@ -23,7 +23,7 @@ PTOTMPL="$DIR/gear360video.pto"
 TMPAUDIO="tmpaudio.aac"
 TMPVIDEO="tmpvideo.mp4"
 # Debug
-DEBUG="yes"
+DEBUG=""
 
 # Debug, arguments:
 # 1. Text to print
@@ -151,6 +151,7 @@ set IMAGETMPL=image%%05d.jpg
 set IMAGETMPLENC=image%%05d_pano.jpg
 set TMPAUDIO=tmpaudio.aac
 set TMPVIDEO=tmpvideo.mp4
+set DEBUG=""
 
 rem Check arguments
 IF [%1] == [] GOTO NOARGS

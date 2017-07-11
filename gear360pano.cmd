@@ -32,7 +32,7 @@ BLENDPROG="enblend"
 EXTRANONAOPTIONS="-g"
 EXTRAENBLENDOPTIONS="--gpu"
 # Debug
-DEBUG="yes"
+DEBUG=""
 
 # Debug, arguments:
 # 1. Text to print
@@ -349,7 +349,7 @@ rem By default use gpu
 set EXTRANONAOPTIONS="-g"
 set EXTRAENBLENDOPTIONS="--gpu"
 rem Debug enable ("yes")/disable
-set DEBUG="yes"
+set DEBUG=""
 
 rem Process arguments
 set PARAMCOUNT=0
@@ -360,39 +360,39 @@ rem Small hack as substring doesn't work on %1 (need to use delayed sub.?)
 set _TMP=%1
 set FIRSTCHAR=%_TMP:~0,1%
 rem No arguments?
-call :print_debug Current arg: %_TMP%
+rem call :PRINT_DEBUG Current arg: %_TMP%
 if "%_TMP%" == "" goto PARAMDONE
 rem Process arguments
 if "%FIRSTCHAR%" == "/" (
   set SWITCH=!_TMP:~1,2!
-  call :print_debug Current switch: !SWITCH!
+  rem call :PRINT_DEBUG Current switch: !SWITCH!
   rem Switch processing
   if /i "!SWITCH!" == "q" (
     shift
-    call :print_debug Setting JPEG quality to: %2
+    rem call :PRINT_DEBUG Setting JPEG quality to: %2
     rem shift has no effect (delayed expansion not working on %1?) we have to use %2
     set JPGQUALITY=%2
   )
   if /i "!SWITCH!" == "h" (
-    call :print_debug Printing help
+    rem call :PRINT_DEBUG Printing help
     goto NOARGS
   )
   if /i "!SWITCH!" == "o" (
     shift
-    call :print_debug Setting output directory to: %2
+    rem call :PRINT_DEBUG Setting output directory to: %2
     set OUTDIR=%2
   )
   if /i "!SWITCH!" == "g" (
-    call :print_debug Will update gallery panorama list file
+    rem call :PRINT_DEBUG Will update gallery panorama list file
     set CREATEGALLERY=yes
   )
   if /i "!SWITCH!" == "a" (
-    call :print_debug Forcing processing of all files
+    rem call :PRINT_DEBUG Forcing processing of all files
     set IGNOREPROCESSED=no
   )
   if /i "!SWITCH!" == "t" (
     shift
-    call :print_debug Setting temporary dir: %2
+    rem call :PRINT_DEBUG Setting temporary dir: %2
     if not exist "%2" (
       echo Directory "%2" does not exist, using system default
     ) else (
@@ -400,22 +400,22 @@ if "%FIRSTCHAR%" == "/" (
     )
   )
   if /i "!SWITCH!" == "m" (
-    call :print_debug Using multiblend as blending program
+    rem call :PRINT_DEBUG Using multiblend as blending program
     set BLENDPROG=%MULTIBLENDEXE%
   )
   if /i "!SWITCH!" == "n" (
-    call :print_debug Disabling GPU usage
+    rem call :PRINT_DEBUG Disabling GPU usage
     rem Clear any options enabling usage of gpu
     set EXTRANONAOPTIONS=
     set EXTRAENBLENDOPTIONS=
   )
 ) else (
   if %PARAMCOUNT% EQU 0 (
-    call :print_debug Input file: %_TMP%
+    rem call :PRINT_DEBUG Input file: %_TMP%
     set PROTOINNAME=%_TMP%
   )
   if %PARAMCOUNT% EQU 1 (
-    call :print_debug Setting PTO: %_TMP%
+    rem call :PRINT_DEBUG Setting PTO: %_TMP%
     set PTOTMPL=%_TMP%
   )
   set /a PARAMCOUNT+=1
@@ -467,11 +467,11 @@ for %%f in (%PROTOINNAME%) do (
     set /p MODELNAME=<modelname.tmp
     del modelname.tmp
     if "!PTOTMPL!" == "" (
-      call :print_debug Detected model: !MODELNAME!
+      rem call :PRINT_DEBUG Detected model: !MODELNAME!
       if "!MODELNAME!" == "SM-C200" set LOCALPTOTMPL=%PTOTMPL_SM_C200%
       if "!MODELNAME!" == "SM-R210" set LOCALPTOTMPL=%PTOTMPL_SM_R210%
     ) else (
-      call :print_debug Using command line PTO: !PTOTMPL!
+      rem call :PRINT_DEBUG Using command line PTO: !PTOTMPL!
       set LOCALPTOTMPL=!PTOTMPL!
     )
 
@@ -586,10 +586,10 @@ set LOCALPTOTMPL=%3
 
 rem Execute commands (as simple as it is)
 echo Processing input images (nona)
-call :print_debug Extra nona options: %EXTRANONAOPTIONS%
-call :print_debug Output: %MYTEMPDIR%\%OUTTMPNAME%
-call :print_debug PTO: %LOCALPTOTMPL%
-call :print_debug Local input: %LOCALINNAME%
+rem call :PRINT_DEBUG Extra nona options: %EXTRANONAOPTIONS%
+rem call :PRINT_DEBUG Output: %MYTEMPDIR%\%OUTTMPNAME%
+rem call :PRINT_DEBUG PTO: %LOCALPTOTMPL%
+rem call :PRINT_DEBUG Local input: %LOCALINNAME%
 "%HUGINPATH%/nona.exe" ^
               %EXTRANONAOPTIONS% ^
               -o %MYTEMPDIR%\%OUTTMPNAME% ^
@@ -602,14 +602,14 @@ if %ERRORLEVEL% equ 1 goto NONAERROR
 
 rem Extra options for multiblend
 if "%BLENDPROG%" == "multiblend_x64.exe" (
-  set EXTRABLENDOPTS="--quiet"
+  set EXTRABLENDOPTS=--quiet
 )
 rem Add extra options for enblend (ex. gpu)
 if "%BLENDPROG%" == "enblend.exe" (
-  set EXTRABLENDOPTS="%EXTRAENBLENDOPTIONS%"
+  set EXTRABLENDOPTS=%EXTRAENBLENDOPTIONS%
 )
 
-call :print_debug Extra blend prog options: %EXTRABLENDOPTS%
+rem call :PRINT_DEBUG Extra blend prog options: %EXTRABLENDOPTS%
 
 echo Stitching input images
 "%HUGINPATH%\%BLENDPROG%" ^
@@ -650,10 +650,10 @@ del "%LOCALOUTNAME%_original"
 exit /b 0
 
 :PRINT_DEBUG
+
 if %DEBUG% == "yes" (
   echo DEBUG: %1 %2 %3 %4 %5 %6 %7 %8 %9
 )
 
 exit /b 0
-
 :eof
