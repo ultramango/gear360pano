@@ -145,41 +145,40 @@ exit 0
 
 :CMDSCRIPT
 
-set FFMPEGPATH=c:/Program Files/ffmpeg/bin
+set FFMPEGPATH=c:\Program Files\ffmpeg\bin
 set FRAMESTEMPDIR=frames
 set OUTTEMPDIR=frames_stitched
 set PTOTMPL=gear360video.pto
-:: %% is an escape character (note: this will fail on wine's cmd.exe)
+rem %% is an escape character (note: this will fail on wine's cmd.exe)
 set IMAGETMPL=image%%05d.jpg
 set IMAGETMPLENC=image%%05d_pano.jpg
 set TMPAUDIO=tmpaudio.aac
 set TMPVIDEO=tmpvideo.mp4
 
-:: Check arguments
+rem Check arguments
 IF [%1] == [] GOTO NOARGS
 
 :SETNAMEOK
-
-:: Check ffmpeg...
+rem Check ffmpeg...
 if exist "%FFMPEGPATH%/ffmpeg.exe" goto FFMPEGOK
 goto NOFFMPEG
 
 :FFMPEGOK
-:: Create temporary directories
+rem Create temporary directories
 mkdir %FRAMESTEMPDIR%
 mkdir %OUTTEMPDIR%
 
-:: Execute commands (as simple as it is)
+rem Execute commands (as simple as it is)
 echo Converting video to images...
 "%FFMPEGPATH%/ffmpeg.exe" -y -i %1 %FRAMESTEMPDIR%/%IMAGETMPL%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
-:: Stitching
+rem Stitching
 echo Stitching frames...
 for %%f in (%FRAMESTEMPDIR%/*.jpg) do (
-:: For whatever reason (this has to be at the beginning of the line!)
+rem For whatever reason (this has to be at the beginning of the line!)
   echo Processing frame %FRAMESTEMPDIR%\%%f
-:: TODO: There should be some error checking
+rem TODO: There should be some error checking
   call gear360pano.cmd /m /o %OUTTEMPDIR% %FRAMESTEMPDIR%\%%f %PTOTMPL%
 )
 
@@ -193,9 +192,9 @@ if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 echo "Merging audio..."
 
-:: Check if second argument present, if not, set some default for output filename
-:: This is here, because for whatever reason OUTNAME gets overriden by
-:: the last iterated filename if this is at the beginning (for loop is buggy?)
+rem Check if second argument present, if not, set some default for output filename
+rem This is here, because for whatever reason OUTNAME gets overriden by
+rem the last iterated filename if this is at the beginning (for loop is buggy?)
 if not [%2] == [] goto SETNAMEOK
 set OUTNAME="%~n1_pano.mp4"
 
@@ -203,7 +202,7 @@ set OUTNAME="%~n1_pano.mp4"
 "%FFMPEGPATH%/ffmpeg.exe" -y -i %OUTTEMPDIR%/%TMPVIDEO% -i %OUTTEMPDIR%/%TMPAUDIO% -c:v copy -c:a aac -strict experimental %OUTNAME%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
-:: Clean-up (f - force, read-only & dirs, q - quiet)
+rem Clean-up (f - force, read-only & dirs, q - quiet)
 del /f /q %FRAMESTEMPDIR%
 del /f /q %OUTTEMPDIR%
 
@@ -233,8 +232,10 @@ echo ffmpeg failed, video not created
 goto eof
 
 :PRINT_DEBUG
-if "%DEBUG%" == "yes" (
-  echo %1 %2 %3 %4 %5 %6 %7 %8 %9
+if %DEBUG% == "yes" (
+  echo DEBUG: %1 %2 %3 %4 %5 %6 %7 %8 %9
 )
 
 exit /b 0
+
+:eof

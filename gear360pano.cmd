@@ -324,8 +324,8 @@ exit 0
 
 rem http://stackoverflow.com/questions/673523/how-to-measure-execution-time-of-command-in-windows-command-line
 set start=%time%
-set HUGINPATH=C:/Program Files/Hugin/bin
-set HUGINPATH32=C:/Program Files (x86)/Hugin/bin
+set HUGINPATH=C:\Program Files\Hugin\bin
+set HUGINPATH32=C:\Program Files (x86)\Hugin\bin
 set GALLERYDIR=html
 set GALLERYFILELIST=filelist.txt
 rem This is to avoid some weird bug (???) %~dp0 doesn't work in a loop (effect of shift?)
@@ -336,18 +336,20 @@ set PTOTMPL_SM_C200="%SCRIPTPATH%gear360sm-c200.pto"
 set PTOTMPL_SM_R210="%SCRIPTPATH%gear360sm-r210.pto"
 set INNAME=
 set PTOTMPL=
-set OUTDIR=%SCRIPTPATH%\html\data
+set OUTDIR=%SCRIPTPATH%html\data
 set JPGQUALITY=97
 set PTOJPGFILENAME=dummy.jpg
 set IGNOREPROCESSED=yes
 rem Default temporary directory
 set MYTEMPDIR=%TEMP%
+rem We define default here
 set BLENDPROG=enblend.exe
+set MULTIBLENDEXE=multiblend_x64.exe
 rem By default use gpu
 set EXTRANONAOPTIONS="-g"
 set EXTRAENBLENDOPTIONS="--gpu"
-rem Debug enable/disable
-set DEBUG=""
+rem Debug enable ("yes")/disable
+set DEBUG="yes"
 
 rem Process arguments
 set PARAMCOUNT=0
@@ -357,50 +359,65 @@ setlocal enabledelayedexpansion
 rem Small hack as substring doesn't work on %1 (need to use delayed sub.?)
 set _TMP=%1
 set FIRSTCHAR=%_TMP:~0,1%
+rem No arguments?
+call :print_debug Current arg: %_TMP%
 if "%_TMP%" == "" goto PARAMDONE
+rem Process arguments
 if "%FIRSTCHAR%" == "/" (
   set SWITCH=!_TMP:~1,2!
+  call :print_debug Current switch: !SWITCH!
   rem Switch processing
   if /i "!SWITCH!" == "q" (
     shift
+    call :print_debug Setting JPEG quality to: %2
     rem shift has no effect (delayed expansion not working on %1?) we have to use %2
     set JPGQUALITY=%2
   )
   if /i "!SWITCH!" == "h" (
+    call :print_debug Printing help
     goto NOARGS
   )
   if /i "!SWITCH!" == "o" (
     shift
+    call :print_debug Setting output directory to: %2
     set OUTDIR=%2
   )
   if /i "!SWITCH!" == "g" (
+    call :print_debug Will update gallery panorama list file
     set CREATEGALLERY=yes
   )
   if /i "!SWITCH!" == "a" (
+    call :print_debug Forcing processing of all files
     set IGNOREPROCESSED=no
   )
   if /i "!SWITCH!" == "t" (
     shift
-    if not exist %2 (
-      echo Directory %2 does not exist, using system default
-    )
-    else (
+    call :print_debug Setting temporary dir: %2
+    if not exist "%2" (
+      echo Directory "%2" does not exist, using system default
+    ) else (
       set MYTEMPDIR=%2
     )
   )
   if /i "!SWITCH!" == "m" (
-    shift
-    set BLENDPROG=multiblend_x64.exe
+    call :print_debug Using multiblend as blending program
+    set BLENDPROG=%MULTIBLENDEXE%
   )
   if /i "!SWITCH!" == "n" (
-    shift
+    call :print_debug Disabling GPU usage
     rem Clear any options enabling usage of gpu
-    set EXTRANONAOPTIONS=""
-    set EXTRAENBLENDOPTIONS=""
+    set EXTRANONAOPTIONS=
+    set EXTRAENBLENDOPTIONS=
   )
 ) else (
-  if %PARAMCOUNT% EQU 0 set PROTOINNAME=%_TMP%
-  if %PARAMCOUNT% EQU 1 set PTOTMPL=%_TMP%
+  if %PARAMCOUNT% EQU 0 (
+    call :print_debug Input file: %_TMP%
+    set PROTOINNAME=%_TMP%
+  )
+  if %PARAMCOUNT% EQU 1 (
+    call :print_debug Setting PTO: %_TMP%
+    set PTOTMPL=%_TMP%
+  )
   set /a PARAMCOUNT+=1
 )
 shift & goto PARAMLOOP
@@ -408,10 +425,6 @@ shift & goto PARAMLOOP
 
 rem Check arguments and assume defaults
 if "%PROTOINNAME%" == "" goto NOARGS
-rem OUTNAME will be calculated dynamically
-if "%PTOTMPL%" == "" (
-  set PTOTMPL=%PTOTMPL_SM_C200%
-)
 
 rem Where's Hugin? Prefer 64 bits
 rem Haha, weird bug, it doesn't work when using brackets (spaces in path)
@@ -422,7 +435,7 @@ rem Found x86, overwrite original path
 set HUGINPATH=%HUGINPATH32%
 :HUGINOK
 rem Check blending software (now it can be different)
-if not exist "%HUGINPATH%/%BLENDPROG%" goto NOBLEND
+if "%BLENDPROG%" == "%MULTIBLENDEXE%" if not exist "%HUGINPATH%/%BLENDPROG%" goto NOBLEND
 
 rem Warn early about the gallery
 if "%CREATEGALLERY%" == "yes" if not "%OUTDIR%" == "html\data" (
@@ -453,9 +466,13 @@ for %%f in (%PROTOINNAME%) do (
     "%HUGINPATH%/exiftool.exe" -s -s -s -Model !INNAME! > modelname.tmp
     set /p MODELNAME=<modelname.tmp
     del modelname.tmp
-    if "%PTOTMPL%" == "" (
+    if "!PTOTMPL!" == "" (
+      call :print_debug Detected model: !MODELNAME!
       if "!MODELNAME!" == "SM-C200" set LOCALPTOTMPL=%PTOTMPL_SM_C200%
       if "!MODELNAME!" == "SM-R210" set LOCALPTOTMPL=%PTOTMPL_SM_R210%
+    ) else (
+      call :print_debug Using command line PTO: !PTOTMPL!
+      set LOCALPTOTMPL=!PTOTMPL!
     )
 
     echo Processing file: !INNAME!
@@ -546,7 +563,7 @@ goto eof
 :NOBLEND
 echo.
 echo Could not find requested blending program:
-echo %HUGINPATH%/%BLENDPROG%
+echo %HUGINPATH%\%BLENDPROG%
 echo Please install missing software
 goto eof
 
@@ -558,6 +575,10 @@ goto eof
 echo enblend failed, panorama not created
 goto eof
 
+rem Function to stich panorama, parameters:
+rem 1: input (two fisheye)
+rem 2: output filename
+rem 3: pto (Hugin template) file to use
 :PROCESSPANORAMA
 set LOCALINNAME=%1
 set LOCALOUTNAME=%2
@@ -565,32 +586,38 @@ set LOCALPTOTMPL=%3
 
 rem Execute commands (as simple as it is)
 echo Processing input images (nona)
+call :print_debug Extra nona options: %EXTRANONAOPTIONS%
+call :print_debug Output: %MYTEMPDIR%\%OUTTMPNAME%
+call :print_debug PTO: %LOCALPTOTMPL%
+call :print_debug Local input: %LOCALINNAME%
 "%HUGINPATH%/nona.exe" ^
               %EXTRANONAOPTIONS% ^
-              -o %MYTEMPDIR%/%OUTTMPNAME% ^
+              -o %MYTEMPDIR%\%OUTTMPNAME% ^
               -m TIFF_m ^
               -z LZW ^
               %LOCALPTOTMPL% ^
               %LOCALINNAME% ^
-              "%LOCALINNAME%"
+              %LOCALINNAME%
 if %ERRORLEVEL% equ 1 goto NONAERROR
 
 rem Extra options for multiblend
-if [ "%BLENDPROG%" == "multiblend_x64.exe" ]; then
+if "%BLENDPROG%" == "multiblend_x64.exe" (
   set EXTRABLENDOPTS="--quiet"
-fi
+)
 rem Add extra options for enblend (ex. gpu)
-if [ "$BLENDPROG" == "enblend.exe" ]; then
+if "%BLENDPROG%" == "enblend.exe" (
   set EXTRABLENDOPTS="%EXTRAENBLENDOPTIONS%"
-fi
+)
+
+call :print_debug Extra blend prog options: %EXTRABLENDOPTS%
 
 echo Stitching input images
-"%HUGINPATH%/%BLENDPROG%" ^
+"%HUGINPATH%\%BLENDPROG%" ^
               %EXTRABLENDOPTS% ^
               --compression=%JPGQUALITY% ^
               -o %2 ^
-              %MYTEMPDIR%/%OUTTMPNAME%0000.tif ^
-              %MYTEMPDIR%/%OUTTMPNAME%0001.tif
+              %MYTEMPDIR%\%OUTTMPNAME%0000.tif ^
+              %MYTEMPDIR%\%OUTTMPNAME%0001.tif
 if %ERRORLEVEL% equ 1 goto ENBLENDERROR
 
 rem Check if we have exiftool...
@@ -623,9 +650,10 @@ del "%LOCALOUTNAME%_original"
 exit /b 0
 
 :PRINT_DEBUG
-
-if "%DEBUG%" == "yes" (
-  echo %1 %2 %3 %4 %5 %6 %7 %8 %9
+if %DEBUG% == "yes" (
+  echo DEBUG: %1 %2 %3 %4 %5 %6 %7 %8 %9
 )
 
 exit /b 0
+
+:eof
