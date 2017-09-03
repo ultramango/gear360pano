@@ -4,26 +4,42 @@ goto :CMDSCRIPT
 ::IGNORE_THIS_LINE
 
 # This is a small script to stitch panorama videos produced
-# by Samsung Gear360
+# by Samsung Gear360 (and others?).
 #
+# For help (hopefully) see:
 # https://github.com/ultramango/gear360pano
+#
+# Names:
+# dec, DEC, decoding - means video -> images
+# enc, ENC, encoding - means stitched images -> video
 #
 # Trick with Win/Linux from here:
 # http://stackoverflow.com/questions/17510688/single-script-to-run-in-both-windows-batch-and-linux-bash
 
-################################ Linux part here
+################################ Linux part here ################################
+
+#############
+### Constants
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
-FRAMESTEMPDIR=`mktemp -d`
-OUTTEMPDIR=`mktemp -d`
-IMAGETMPL="image%05d.jpg"
+FRAMESTEMPDIRSUFF="frames"
+OUTTEMPDIRSUFF="out"
+FFMPEGQUALITYDEC="-q:v 2"
+FFMPEGQUALITYENC="-c:v libx265 -x265-params crf=18"
+IMAGETMPLDEC="image%05d.jpg"
 IMAGETMPLENC="image%05d_pano.jpg"
-PTOTMPL="$DIR/gear360video.pto"
+PTOTMPL4K="gear360video4k.pto"
+PTOTMPL2K="gear360video2k.pto"
+# This is a default, it will/should be overwritten anyway
+PTOTMPL="$DIR/${PTOTMPL4K}"
 TMPAUDIO="tmpaudio.aac"
 TMPVIDEO="tmpvideo.mp4"
-# Debug
-DEBUG=""
+# Debug, yes = print debug messages
+DEBUG="yes"
+
+#############
+### Functions
 
 # Debug, arguments:
 # 1. Text to print
@@ -46,11 +62,11 @@ clean_up() {
   fi
 }
 
-# Function to check if a command fails
+# Function to run a command and check the result
 # http://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 run_command() {
   # Remove empty arguments (it will confuse the executed command)
-  cmd=("$@")
+  local cmd=("$@")
   for i in "${!cmd[@]}"; do
     [ -n "${cmd[$i]}" ] || unset "cmd[$i]"
   done
@@ -59,6 +75,7 @@ run_command() {
   "${cmd[@]}"
   local status=$?
   if [ $status -ne 0 ]; then
+    # We failed, inform the user and clean-up
     echo "Error while running $1" >&2
     if [ $1 != "notify-send" ]; then
        # Display error in a nice graphical popup if available
@@ -70,17 +87,84 @@ run_command() {
   return $status
 }
 
-# Check argument(s)
-if [ -z "$1" ]; then
-  echo "Small script to stitch panoramic videos."
+# Print help for the user
+print_help() {
+  echo -e "\nSmall script to stitch raw panoramic videos."
+  echo "Raw meaning two fisheye images side by side."
   echo -e "Script originally writen for Samsung Gear 360.\n"
-  echo -e "Usage:\n$0 inputdir [outputfile]\n"
-  echo "Where inputfile is a panoramic video file,"
+  echo -e "Usage:\n$0 infile [outfile]\n"
+  echo "Where infile is a panoramic video file,"
   echo "output parameter is optional."
+  echo "Video file will be written to a file with appended _pano,"
+  echo -e "example: dummy.mp4 -> dummy_pano.JPG\n"
+  echo "-o|--output  DIR will set the output directory of panoramas"
+  echo "             default: html/data"
+  echo "-s|--speed   optimise for speed (lower quality)"
+  echo "-t|--temp    DIR set temporary directory (default: use system's"
+  echo "             temporary directory)"
+  echo "-h|--help    prints help"
+}
+
+check_preconditions() {
+  # Check if we have the software to do it
+  # http://stackoverflow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
+  local error=0
+
+  type ffmpeg >/dev/null 2>&1 || { echo >&2 "ffmpeg required but it's not installed. Will abort."; error=1; }
+  type multiblend >/dev/null 2>&1 || { echo >&2 "multiblend required but it's not installed. Will abort."; error=1; }
+
+  if [ $error -ne 0 ]; then
+    exit 1
+  fi
+}
+
+######################
+### "Main" starts here
+
+# Check required argument(s)
+if [ -z "$1" ]; then
+  print_help
   run_command notify-send -a $0 "Please provide an input file."
   sleep 2
   exit 1
 fi
+
+# Process command line options. Source (modified):
+# https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+  -h|--help)
+    print_help
+    shift
+    exit 0
+    ;;
+  -o|--output)
+    OUTDIR="$2"
+    shift
+    shift
+    ;;
+  -t|--temp)
+    if [ -d "$2" ]; then
+      TEMPDIRPREFIX="$2"
+    else
+      echo "Given temporary ($2) is not a directory, using default"
+    fi
+    shift
+    shift
+    ;;
+  -s|--speed)
+    FFMPEGQUALITYDEC=""
+    FFMPEGQUALITYENC="-vcodec libx264"
+    shift
+    ;;
+  *)
+    break
+    ;;
+esac
+done
 
 # Output name as second argument
 if [ -z "$2" ]; then
@@ -89,42 +173,76 @@ if [ -z "$2" ]; then
   print_debug "Output filename: $OUTNAME"
 fi
 
-# Check if we have the software to do it
-# http://stackoverflow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
-type ffmpeg >/dev/null 2>&1 || { echo >&2 "ffmpeg required but it's not installed. Aborting."; exit 1; }
+# Check if software is installed
+check_preconditions
 
 # On some systems not using '-p .' (temp in current dir) might cause problems
 STARTTS=`date +%s`
 
+# Handle temporary directories
+if [ -n "$TEMPDIRPREFIX" ]; then
+  FRAMESTEMPDIR=`mktemp -d -p $TEMPDIRPREFIX`
+  OUTTEMPDIR=`mktemp -d -p $TEMPDIRPREFIX`
+else
+  FRAMESTEMPDIR=`mktemp -d`
+  OUTTEMPDIR=`mktemp -d`
+fi
+
 # Extract frames from video
 run_command notify-send -a $0 "Starting panoramic video stitching..."
 echo "Extracting frames from video (this might take a while)..."
-run_command "ffmpeg" "-y" "-i" "$1" "$FRAMESTEMPDIR/$IMAGETMPL"
+# Note: anything in quotes will be treated as one single option
+run_command "ffmpeg" "-y" "-i" "$1" $FFMPEGQUALITYDEC "$FRAMESTEMPDIR/$IMAGETMPLDEC"
+
+# Detect video size (http://trac.ffmpeg.org/wiki/FFprobeTips)
+eval $(ffprobe -v error -of flat=s=_ -select_streams v:0 -show_entries stream=height,width "$1")
+SRCVIDEOSIZE=${streams_stream_0_width}:${streams_stream_0_height}
+print_debug "Input video size: ${SRCVIDEOSIZE}"
+
+# Detect video size and select appriopriate pto file
+case $SRCVIDEOSIZE in
+  3840:1920)
+    PTOTMPL=$PTOTMPL4K
+    ;;
+  2560:1280)
+    PTOTMPL=$PTOTMPL2K
+    ;;
+  *)
+    PTOTMPL=$PTOTMPL4K
+    ;;
+esac
+print_debug "PTO template: ${PTOTMPL}"
 
 # Stitch frames
 echo "Stitching frames..."
 for i in $FRAMESTEMPDIR/*.jpg; do
   echo Frame: $i
-  run_command "$DIR/gear360pano.cmd" "-m" "-o" "$OUTTEMPDIR" "$i" "$PTOTMPL"
+  run_command "$DIR/gear360pano.cmd" -m -o "$OUTTEMPDIR" "$i" "$PTOTMPL"
 done
 
 # Put stitched frames together
 echo "Recoding the video..."
-run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPLENC" -r 30 -s 3840:1920 -vcodec libx264 "$OUTTEMPDIR/$TMPVIDEO"
+# Detect source FPS
+SRCFPSSTR=`ffprobe -v fatal -of default=noprint_wrappers=1:nokey=1 -select_streams 0 -show_entries stream=r_frame_rate "$1"`
+print_debug "Input video FPS: ${SRCFPSSTR}"
 
-# Check if there's an audio (https://stackoverflow.com/questions/21446804/find-if-video-file-has-audio-present-in-it)
-ISAUDIO=`ffprobe -v fatal -of default=nw=1:nk=1 -show_streams -select_streams a -show_entries stream=codec_type "$1"`
+# Re-encode video back with stitched images
+run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPLENC" -r "${SRCFPSSTR}" -s "${SRCVIDEOSIZE}" $FFMPEGQUALITYENC "$OUTTEMPDIR/$TMPVIDEO"
 
-if [ -n "$ISAUDIO" ]; then
+# Check if there's audio present (https://stackoverflow.com/questions/21446804/find-if-video-file-has-audio-present-in-it)
+SRCHASAUDIO=`ffprobe -v fatal -of default=nw=1:nk=1 -show_streams -select_streams a -show_entries stream=codec_type "$1"`
+print_debug "Input video has audio: ${SRCHASAUDIO}"
+
+if [ -n "$SRCHASAUDIO" ]; then
   echo "Extracting audio..."
-  run_command notify-send -a $0 "Extracting audio..."
+  run_command notify-send -a $0 "Extracting audio from source video..."
   run_command ffmpeg -y -i "$1" -vn -acodec copy "$OUTTEMPDIR/$TMPAUDIO"
 
   echo "Merging audio..."
-  run_command notify-send -a $0 "Merging audio..."
+  run_command notify-send -a $0 "Merging audio with final video..."
   run_command ffmpeg -y -i "$OUTTEMPDIR/$TMPVIDEO" -i "$OUTTEMPDIR/$TMPAUDIO" -c:v copy -c:a aac -strict experimental "$OUTNAME"
 else
-  print_debug "No audio detected"
+  print_debug "No audio detected (timelapse?), continuing..."
   mv "$OUTTEMPDIR/$TMPVIDEO" "$OUTNAME"
 fi
 
@@ -147,7 +265,7 @@ set FRAMESTEMPDIR=frames
 set OUTTEMPDIR=frames_stitched
 set PTOTMPL=gear360video.pto
 rem %% is an escape character (note: this will fail on wine's cmd.exe)
-set IMAGETMPL=image%%05d.jpg
+set IMAGETMPLDEC=image%%05d.jpg
 set IMAGETMPLENC=image%%05d_pano.jpg
 set TMPAUDIO=tmpaudio.aac
 set TMPVIDEO=tmpvideo.mp4
@@ -168,7 +286,7 @@ mkdir %OUTTEMPDIR%
 
 rem Execute commands (as simple as it is)
 echo Converting video to images...
-"%FFMPEGPATH%/ffmpeg.exe" -y -i %1 %FRAMESTEMPDIR%/%IMAGETMPL%
+"%FFMPEGPATH%/ffmpeg.exe" -y -i %1 %FRAMESTEMPDIR%/%IMAGETMPLDEC%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 rem Stitching

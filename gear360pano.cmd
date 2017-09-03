@@ -172,7 +172,7 @@ print_help() {
   echo "-m|--multiblend use multiblend (http://horman.net/multiblend/)"
   echo "             instead of enblend for final stitching"
   echo "-n|--no-gpu  do not use GPU (safer but slower)"
-  echo "-o|--output DIR will set the output directory of panoramas"
+  echo "-o|--output  DIR will set the output directory of panoramas"
   echo "             default: html/data"
   echo "-q|--quality QUALITY will set the JPEG quality to quality"
   echo "-t|--temp DIR set temporary directory (default: use system's"
