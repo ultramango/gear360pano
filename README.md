@@ -1,7 +1,7 @@
 # About
 
 Simple script to create equirectangular panoramic photos or videos from Samsung Gear 360. It supports
-generation 1 (SM-C200) and 2 (2017 or SM-R210)).
+generation 1 (SM-C200) and 2 (2017 or SM-R210).
 
 ![Samsung Gear 360](gear360.jpg)
 
