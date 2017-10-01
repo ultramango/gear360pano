@@ -31,8 +31,8 @@ BLENDPROG="enblend"
 # Default - we use GPU
 EXTRANONAOPTIONS="-g"
 EXTRAENBLENDOPTIONS="--gpu"
-# Debug
-DEBUG=""
+# Debug, yes - print debug, empty - no debug
+DEBUG="no"
 
 # Debug, arguments:
 # 1. Text to print
@@ -90,6 +90,8 @@ process_panorama() {
     TEMPDIR=`mktemp -d`
   fi
 
+  print_debug "process_panorama: args: in: $1, out: $2, tmpl: $3, tempdir: ${TEMPDIR}"
+
   # Stitch panorama (same file twice as input)
   echo "Processing input images (nona)"
   # We need to use run_command with many parameters, or $1 doesn't get
@@ -112,7 +114,7 @@ process_panorama() {
     EXTRABLENDOPTS="--quiet"
   fi
 
-  # Add extra options for enblend (ex. gpu)
+  # Add extra options for enblend (ex. gpu)/tmp/tmp.ctzbeoCfIn
   if [ "$BLENDPROG" == "enblend" ]; then
     EXTRABLENDOPTS="$EXTRAENBLENDOPTIONS"
   fi
@@ -166,7 +168,7 @@ print_help() {
   echo -e "be a wildcard (ex. *.JPG). hugintemplate is optional.\n"
   echo "Panorama file will be written to a file with appended _pano,"
   echo -e "example: 360_010.JPG -> 360_010_pano.JPG\n"
-  echo "-a|--process-all process all files, by default processed"
+  echo "-a|--process-all force panorama processing, by default processed"
   echo "             panoaramas are skipped (in output directory)"
   echo "-g|--gallery update gallery file list"
   echo "-m|--multiblend use multiblend (http://horman.net/multiblend/)"
@@ -207,6 +209,10 @@ case $key in
     ;;
   -o|--output)
     OUTDIR="$2"
+    if [ ! -d "$2" ]; then
+      echo "Given output ($2) is not a directory, cannot continue"
+      exit 1
+    fi
     shift
     shift
     ;;
@@ -312,7 +318,7 @@ fi
 ENDTS=`date +%s`
 RUNTIME=$((ENDTS-STARTTS))
 echo "Processing took: $RUNTIME s"
-echo "Processed files are in $OUTDIR"
+echo "Processed file(s) are in $OUTDIR"
 
 # Uncomment this if you don't do videos; otherwise, it is quite annoying
 #notify-send "Panorama written to $OUTNAME, took: $RUNTIME s"

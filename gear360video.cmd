@@ -25,6 +25,8 @@ goto :CMDSCRIPT
 DIR=$(dirname `which $0`)
 FRAMESTEMPDIRSUFF="frames"
 OUTTEMPDIRSUFF="out"
+OUTDIR="$DIR/html/data"
+# Options, default is the quality option, overridable by speed parameter
 FFMPEGQUALITYDEC="-q:v 2"
 FFMPEGQUALITYENC="-c:v libx265 -x265-params crf=18"
 IMAGETMPLDEC="image%05d.jpg"
@@ -36,7 +38,7 @@ PTOTMPL="$DIR/${PTOTMPL4K}"
 TMPAUDIO="tmpaudio.aac"
 TMPVIDEO="tmpvideo.mp4"
 # Debug, yes = print debug messages
-DEBUG="yes"
+DEBUG="no"
 
 #############
 ### Functions
@@ -100,7 +102,7 @@ print_help() {
   echo "-o|--output  DIR will set the output directory of panoramas"
   echo "             default: html/data"
   echo "-s|--speed   optimise for speed (lower quality)"
-  echo "-t|--temp    DIR set temporary directory (default: use system's"
+  echo "-t|--temp    DIR set temporary directory (default: system's"
   echo "             temporary directory)"
   echo "-h|--help    prints help"
 }
@@ -125,7 +127,7 @@ check_preconditions() {
 if [ -z "$1" ]; then
   print_help
   run_command notify-send -a $0 "Please provide an input file."
-  sleep 2
+  sleep 1
   exit 1
 fi
 
@@ -143,6 +145,10 @@ case $key in
     ;;
   -o|--output)
     OUTDIR="$2"
+    if [ ! -d "$2" ]; then
+      echo "Given output ($2) is not a directory, cannot continue"
+      exit 1
+    fi
     shift
     shift
     ;;
@@ -166,11 +172,13 @@ case $key in
 esac
 done
 
-# Output name as second argument
+# Output name as second argument plus output directory
 if [ -z "$2" ]; then
   # If invoked by nautilus open-with, we need to remember the proper directory in the outname
-  OUTNAME=`dirname "$1"`/`basename "${1%.*}"`_pano.mp4
+  OUTNAME=$OUTDIR/`basename "${1%.*}"`_pano.mp4
   print_debug "Output filename: $OUTNAME"
+else
+  OUTNAME=$OUTDIR/`basename $2`
 fi
 
 # Check if software is installed
@@ -257,6 +265,7 @@ run_command notify-send -a $0 "'Conversion complete. Video written to $OUTNAME, 
 exit 0
 
 ################################ Windows part here
+# TODO: update to match Linux functionality
 
 :CMDSCRIPT
 
