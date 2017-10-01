@@ -8,6 +8,10 @@ Simple script to create equirectangular panoramic photos or videos from Samsung 
 
 Latest Changes:
 
+- 2017-10-01: higher quality video output by default (override with ```--speed``` option), ability to
+set temporary directory for video, added 2k video support (contribution by durkie), few fixes, added
+tests for panorama and video (can be used as primitive performance mesaurement). Important: Linux
+changes only, Windows should, hopefully, follow later.
 - 2017-07-11: fixed video script to work with new panorama script, fix when run outside script directory
 (video script still might have problems), GPU used by default, ability to set temporary directory (not
 for videos yet), video stitching uses [multiblend](http://horman.net/multiblend/) by default (no option to
