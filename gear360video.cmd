@@ -95,16 +95,16 @@ print_help() {
   echo "Raw meaning two fisheye images side by side."
   echo -e "Script originally writen for Samsung Gear 360.\n"
   echo -e "Usage:\n$0 infile [outfile]\n"
-  echo "Where infile is a panoramic video file,"
-  echo "output parameter is optional."
-  echo "Video file will be written to a file with appended _pano,"
-  echo -e "example: dummy.mp4 -> dummy_pano.JPG\n"
-  echo "-o|--output  DIR will set the output directory of panoramas"
-  echo "             default: html/data"
-  echo "-s|--speed   optimise for speed (lower quality)"
-  echo "-t|--temp    DIR set temporary directory (default: system's"
-  echo "             temporary directory)"
-  echo "-h|--help    prints help"
+  echo "Where infile is a panoramic video file, output"
+  echo "parameter is optional. Video file will be written"
+  echo "to a file with appended _pano, ex.: dummy.mp4 will"
+  echo -e "be stitched to dummy_pano.mp4.\n"
+  echo "-o|--output DIR will set the output directory of panoramas"
+  echo "                default: html/data"
+  echo "-s|--speed      optimise for speed (lower quality)"
+  echo "-t|--temp DIR   set temporary directory (default: system's"
+  echo "                temporary directory)"
+  echo "-h|--help       prints help"
 }
 
 check_preconditions() {
@@ -127,7 +127,6 @@ check_preconditions() {
 if [ -z "$1" ]; then
   print_help
   run_command notify-send -a $0 "Please provide an input file."
-  sleep 1
   exit 1
 fi
 
