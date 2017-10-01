@@ -1,6 +1,7 @@
 # About
 
-Simple script to create equirectangular panoramic photos or videos from Samsung Gear 360 (generation 1 /SM-C200/ and 2 /SM-R210/).
+Simple script to create equirectangular panoramic photos or videos from Samsung Gear 360. It supports
+generation 1 (SM-C200) and 2 (2017 or SM-R210)).
 
 ![Samsung Gear 360](gear360.jpg)
 
@@ -127,15 +128,12 @@ Few remarks (does not apply for the videos):
 on disk space, switch to png format (change inside the script), but the processing time increases about four times,
 * on Intel i7, 16 GB memory, NVIDIA 1080 it takes ~10 seconds to produce the panorama (using enblend),
 * for better results stitch panorama manually: create new project in Hugin, add two times the same (raw)
-panorama file, then choose from menu "File" and "Apply Template",
-add points and optimise,
+panorama file, then choose from menu "File" and "Apply Template", add points and optimise,
 * script might contain bugs, most possibly running script from weird directories (symbolic links, spaces
 in paths) or giving image from just as weird directory location,
 * script might not support some exotic interpreters or not work on some older Windows versions. On Linux
-it should work with bash and zsh,
-* try not to use current directory as output directory, it will process already processed panorama files
-which might lead to problems,
-* when using zsh, you might need to escape asterisk, otherwise script will hang,
+it works with bash,
+* you might need to escape asterisk, otherwise script might/will hang,
 * script has (should have) Unix line endings (this might cause problems with labels under Windows, so far - not).
 
 ### Videos
@@ -144,16 +142,21 @@ For videos:
 
     ./gear360video.cmd video.mp4
 
-This should produce ```video_pano.mp4``` file, output file can be given as a second argument.
+This should produce ```video_pano.mp4``` in ```html/data``` directory (default), output file can be
+given as a second argument (but not full path, see ```-o``` parameter).
 
-Don't have any expectations for video stitching to work well, it is higly unoptimised but to some degree useable.
+List of switches (Linux):
+
+* -o directory - place stitched video in directory
+* -s - optimise stitching for speed
+* -t directory - place temporary files in directory
+* -h - display help
 
 What is/might be wrong (loose notes about the script):
 
 * to speed-up stitching [multiblend](http://horman.net/multiblend/) is used, it means you have to install it,
-* only the highest resolution is currently supported (3840x1920),
-* video stitching works by converting it to image files, stitching them and then re-coding,
-* it might require a lot of disk space (gigabytes or even more) as the long videos will result in many image
+* video stitching works by converting it to image files, stitching them and then re-coding, it might
+require a lot of disk space (gigabytes or even more) as the long videos will result in many image
 files, this could beoptimised by removing files which are no longer needed, also check for left-over
 directories that might have not been removed,
 * possibly [GNU Parallel](https://www.gnu.org/software/parallel/) could be used for Linux for parallel
@@ -178,7 +181,7 @@ Links:
 
 # TODOs
 
-Few things that could be improved:
+Few TODOs:
 
-* there's no vignetting correction, better lens correction could be created,
-* video script could accept parameters.
+* support more image sizes, not only 7k,
+* there's no vignetting correction, better lens correction could be created.
