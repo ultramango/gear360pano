@@ -18,7 +18,7 @@ DIR=$(dirname `which $0`)
 T="./gear360video.cmd" # T - for simplicity, it's a test subject
 # Debug, yes = print debug messages
 DEBUG="no"
-VERSION="1"
+VERSION="2"
 
 #############
 ### Functions
@@ -176,6 +176,18 @@ else
 fi
 rm ${testvideo}
 
+# *** 7. Parallel processing
+testvideo=$(create_test_video "3840x1920")
+exec_test "$T -p ${testvideo}" "4k video stitching and parallel processing"
+# Check if the video has been created
+outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
+if [ ! -f ${outvideo} ]; then
+  echo "Extra check failed: output file (${outvideo}) not found"
+else
+  rm ${outvideo}
+fi
+rm ${testvideo}
+
 # Negative tests
 idonotexist='ihopeidonotexist' # Something that does not exist
 # *** 1. No input
@@ -192,7 +204,7 @@ rm ${testvideo}
 # *** 4. Non existing temp directory
 testvideo=$(create_test_video "3840x1920")
 testdir=$(mktemp -d)
-exec_test "$T -o ${testdir} -t ${idonotexist} ${testvideo}" "Non-existing temp direcotry plus output dir" "0"
+exec_test "$T -o ${testdir} -t ${idonotexist} ${testvideo}" "Non-existing temp directory plus output dir" "0"
 # Check if the video has been created
 outvideo=${testdir}/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
@@ -202,7 +214,7 @@ else
 fi
 rm ${testvideo}
 
-# TODO: ffmpeg not installed
+# TODO: ffmpeg not installed (modify PATH and link required tools locally?)
 
 # Summary
 totalendts=`date +%s`

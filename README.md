@@ -9,6 +9,9 @@ generation 1 (SM-C200) and 2 (2017 or SM-R210).
 
 Latest Changes:
 
+- 2017-10-04: added ```-p``` option for parallel video stitching (contribution by kwahoo2).
+On some machines it should greatly reduce video stitching time (ex. 33 s vs ~13 s). Use
+with care, might freeze your machine.
 - 2017-10-01: higher quality video output by default (override with ```--speed``` option), ability to
 set temporary directory for video, added 2k video support (contribution by durkie), few fixes, added
 tests for panorama and video (can be used as primitive performance mesaurement). Important: Linux
@@ -42,6 +45,7 @@ Requirements:
 * [Hugin](http://hugin.sourceforge.net/).
 * [ffmpeg](https://ffmpeg.org/download.html) (optional, needed for video stitching).
 * [multiblend](http://horman.net/multiblend/) (optional, needed for video stitching).
+* [GNU Parallel](https://www.gnu.org/software/parallel/) (optional, needed for video stitching if using ```-p``` option).
 
 ## Installation
 
@@ -62,6 +66,12 @@ compile it and install. After unpacking read ```build.txt```... or do this:
     sudo cp multiblend /usr/local/bin
 
 Package exists for [Arch Linux](https://aur.archlinux.org/packages/multiblend/).
+
+[GNU Parallel](https://www.gnu.org/software/parallel/) is needed if using ```-p``` option
+(greatly speeds-up processing). It is a standard package that can be installed
+using your package manager, example:
+
+    apt-get install parallel
 
 Finally: clone or download zip of this project then unpack it somewhere.
 
@@ -148,6 +158,7 @@ given as a second argument (but not full path, see ```-o``` parameter).
 List of switches (Linux):
 
 * -o directory - place stitched video in directory
+* -p - use GNU Parallel to process frames in parallel (speeds things up)
 * -s - optimise stitching for speed
 * -t directory - place temporary files in directory
 * -h - display help
@@ -159,10 +170,8 @@ What is/might be wrong (loose notes about the script):
 require a lot of disk space (gigabytes or even more) as the long videos will result in many image
 files, this could beoptimised by removing files which are no longer needed, also check for left-over
 directories that might have not been removed,
-* possibly [GNU Parallel](https://www.gnu.org/software/parallel/) could be used for Linux for parallel
-panorama processing:
-```ls *.jpeg | parallel -j+0 --eta '../../gear360pano.sh {} ../stitched/{}'```. But then, Hugin already
-makes good use of the cores,
+* ```-p``` option might be pretty resource hungry, your machine might slow down or freeze,
+use with care,
 * timelapse videos are not (yet?) supported under Windows (problems with sound).
 
 # Tutorial

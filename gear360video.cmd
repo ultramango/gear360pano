@@ -3,8 +3,7 @@
 goto :CMDSCRIPT
 ::IGNORE_THIS_LINE
 
-# This is a small script to stitch panorama videos produced
-# by Samsung Gear360 (and others?).
+# Script to stitch panoramic videos produced by Samsung Gear360 (and others?).
 #
 # For help (hopefully) see:
 # https://github.com/ultramango/gear360pano
@@ -37,6 +36,10 @@ PTOTMPL2K="gear360video2k.pto"
 PTOTMPL="$DIR/${PTOTMPL4K}"
 TMPAUDIO="tmpaudio.aac"
 TMPVIDEO="tmpvideo.mp4"
+# Throttle parallel processing to give some room for other processes
+# 80% - 0.8 job per core (logical, not physical), 100% one job per core,
+# 200% 2 jobs per core, etc. Be careful with >=100% might freeze the machine.
+PARALLELTHROTTLE="80%"
 # Debug, yes = print debug messages
 DEBUG="no"
 
@@ -101,6 +104,7 @@ print_help() {
   echo -e "be stitched to dummy_pano.mp4.\n"
   echo "-o|--output DIR will set the output directory of panoramas"
   echo "                default: html/data"
+  echo "-p|--parallel   use GNU Parallel to speed-up processing"
   echo "-s|--speed      optimise for speed (lower quality)"
   echo "-t|--temp DIR   set temporary directory (default: system's"
   echo "                temporary directory)"
@@ -115,6 +119,12 @@ check_preconditions() {
   type ffmpeg >/dev/null 2>&1 || { echo >&2 "ffmpeg required but it's not installed. Will abort."; error=1; }
   type multiblend >/dev/null 2>&1 || { echo >&2 "multiblend required but it's not installed. Will abort."; error=1; }
 
+  # Use parallel? Check if we have it
+  # https://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
+  if [ ! -z "${USEPARALLEL+x}" ]; then
+    type parallel >/dev/null 2>&1 || { echo >&2 "GNU Parallel use enabled but it's not installed. Will abort."; error=1; }
+  fi
+
   if [ $error -ne 0 ]; then
     exit 1
   fi
@@ -124,7 +134,7 @@ check_preconditions() {
 ### "Main" starts here
 
 # Check required argument(s)
-if [ -z "$1" ]; then
+if [ -z "${1+x}" ]; then
   print_help
   run_command notify-send -a $0 "Please provide an input file."
   exit 1
@@ -151,6 +161,12 @@ case $key in
     shift
     shift
     ;;
+  -p|--parallel)
+    # Switch to use parallel
+    USEPARALLEL=1
+    print_debug "Use of GNU Parallel enabled"
+    shift
+    ;;
   -t|--temp)
     if [ -d "$2" ]; then
       TEMPDIRPREFIX="$2"
@@ -172,7 +188,7 @@ esac
 done
 
 # Output name as second argument plus output directory
-if [ -z "$2" ]; then
+if [ -z "${2+x}" ]; then
   # If invoked by nautilus open-with, we need to remember the proper directory in the outname
   OUTNAME=$OUTDIR/`basename "${1%.*}"`_pano.mp4
   print_debug "Output filename: $OUTNAME"
@@ -183,11 +199,12 @@ fi
 # Check if software is installed
 check_preconditions
 
-# On some systems not using '-p .' (temp in current dir) might cause problems
+# Start counting time
 STARTTS=`date +%s`
 
 # Handle temporary directories
 if [ -n "$TEMPDIRPREFIX" ]; then
+  # On some systems not using '-p .' (temp in current dir) might cause problems
   FRAMESTEMPDIR=`mktemp -d -p $TEMPDIRPREFIX`
   OUTTEMPDIR=`mktemp -d -p $TEMPDIRPREFIX`
 else
@@ -222,10 +239,18 @@ print_debug "PTO template: ${PTOTMPL}"
 
 # Stitch frames
 echo "Stitching frames..."
-for i in $FRAMESTEMPDIR/*.jpg; do
-  echo Frame: $i
-  run_command "$DIR/gear360pano.cmd" -m -o "$OUTTEMPDIR" "$i" "$PTOTMPL"
-done
+if [ -z "${USEPARALLEL+x}" ]; then
+  # No parallel
+  for i in $FRAMESTEMPDIR/*.jpg; do
+    echo Frame: $i
+    run_command "$DIR/gear360pano.cmd" -m -o "$OUTTEMPDIR" "$i" "$PTOTMPL"
+  done
+else
+  # Use parallel
+  export -f print_debug
+  export -f run_command
+  ls -1 $FRAMESTEMPDIR/*.jpg | parallel -j $PARALLELTHROTTLE --bar run_command "$DIR/gear360pano.cmd" -m -o "$OUTTEMPDIR" {} "$PTOTMPL"
+fi
 
 # Put stitched frames together
 echo "Recoding the video..."
@@ -249,7 +274,7 @@ if [ -n "$SRCHASAUDIO" ]; then
   run_command notify-send -a $0 "Merging audio with final video..."
   run_command ffmpeg -y -i "$OUTTEMPDIR/$TMPVIDEO" -i "$OUTTEMPDIR/$TMPAUDIO" -c:v copy -c:a aac -strict experimental "$OUTNAME"
 else
-  print_debug "No audio detected (timelapse?), continuing..."
+  print_debug "No audio detected (timelapse video?), continuing..."
   mv "$OUTTEMPDIR/$TMPVIDEO" "$OUTNAME"
 fi
 
