@@ -159,7 +159,7 @@ List of switches (Linux):
 
 * -o directory - place stitched video in directory
 * -p - use GNU Parallel to process frames in parallel (speeds things up)
-* -s - optimise stitching for speed
+* -s - optimise stitching for speed (quality will suffer)
 * -t directory - place temporary files in directory
 * -h - display help
 
