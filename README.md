@@ -104,7 +104,7 @@ Usage (example):
     gear360pano.cmd *.JPG
 
     # For Linux and GNU Parallel
-    ls -1 path/to/files/*.JPG | parallel --load 99% --noswap --memfree 500M --bar ./gear360pano.cmd -a {}
+    ls -1 path/to/files/*.JPG | parallel --load 99% --noswap --memfree 500M --bar ./gear360pano.cmd {}
 
 Output (example for Linux):
 
