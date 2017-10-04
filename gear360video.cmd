@@ -97,7 +97,7 @@ print_help() {
   echo -e "\nSmall script to stitch raw panoramic videos."
   echo "Raw meaning two fisheye images side by side."
   echo -e "Script originally writen for Samsung Gear 360.\n"
-  echo -e "Usage:\n$0 infile [outfile]\n"
+  echo -e "Usage:\n$0 [options] infile [outfile]\n"
   echo "Where infile is a panoramic video file, output"
   echo "parameter is optional. Video file will be written"
   echo "to a file with appended _pano, ex.: dummy.mp4 will"
@@ -108,7 +108,7 @@ print_help() {
   echo "-s|--speed      optimise for speed (lower quality)"
   echo "-t|--temp DIR   set temporary directory (default: system's"
   echo "                temporary directory)"
-  echo "-h|--help       prints help"
+  echo "-h|--help       prints this help"
 }
 
 check_preconditions() {
@@ -365,7 +365,7 @@ echo.
 echo Script originally writen for Samsung Gear 360.
 echo.
 echo Usage:
-echo %0 inputfile [outputfile]
+echo %0 [options] inputfile [outputfile]
 echo.
 echo Where inputfile is a panorama file from camera,
 echo output parameter is optional

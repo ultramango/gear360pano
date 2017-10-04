@@ -163,7 +163,7 @@ print_help() {
   echo -e "\nSmall script to stitch raw panorama files."
   echo "Raw meaning two fisheye images side by side."
   echo -e "Script originally writen for Samsung Gear 360.\n"
-  echo -e "Usage:\n$0 [-q quality] [-o outdir] [-h] infile [hugintemplate]\n"
+  echo -e "Usage:\n$0 [options] infile [hugintemplate]\n"
   echo "Where infile is a panorama file from camera, it can"
   echo -e "be a wildcard (ex. *.JPG). hugintemplate is optional.\n"
   echo "Panorama file will be written to a file with appended _pano,"
@@ -179,7 +179,7 @@ print_help() {
   echo "-q|--quality QUALITY will set the JPEG quality to quality"
   echo "-t|--temp DIR set temporary directory (default: use system's"
   echo "             temporary directory)"
-  echo "-h|--help    prints help"
+  echo "-h|--help    prints this help"
 }
 
 create_gallery() {
@@ -537,7 +537,7 @@ echo Raw meaning two fisheye images side by side.
 echo Script originally writen for Samsung Gear 360.
 echo.
 echo Usage:
-echo %SCRIPTNAME% [/q quality] [/o outdir] [/h] infile [hugintemplate]
+echo %SCRIPTNAME% [options] infile [hugintemplate]
 echo.
 echo Where infile is a panorama file from camera, it can
 echo be a wildcard (ex. *.JPG). hugintemplate is optional.
@@ -555,7 +555,7 @@ echo    default: html\data
 echo /q sets output jpeg quality
 echo /t sets temporary directory (default: use systems' default
 echo    temporary directory)
-echo /h prints help
+echo /h prints this help
 echo.
 goto eof
 
