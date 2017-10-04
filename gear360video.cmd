@@ -37,9 +37,8 @@ PTOTMPL="$DIR/${PTOTMPL4K}"
 TMPAUDIO="tmpaudio.aac"
 TMPVIDEO="tmpvideo.mp4"
 # Throttle parallel processing to give some room for other processes
-# 80% - 0.8 job per core (logical, not physical), 100% one job per core,
-# 200% 2 jobs per core, etc. Be careful with >=100% might freeze the machine.
-PARALLELTHROTTLE="80%"
+# See: https://www.gnu.org/software/parallel/parallel_tutorial.html#Limiting-the-resources
+PARALLELEXTRAOPTS="--load 99% --noswap --memfree 500M"
 # Debug, yes = print debug messages
 DEBUG="no"
 
@@ -241,15 +240,15 @@ print_debug "PTO template: ${PTOTMPL}"
 echo "Stitching frames..."
 if [ -z "${USEPARALLEL+x}" ]; then
   # No parallel
-  for i in $FRAMESTEMPDIR/*.jpg; do
-    echo Frame: $i
-    run_command "$DIR/gear360pano.cmd" -m -o "$OUTTEMPDIR" "$i" "$PTOTMPL"
+  for panofile in $FRAMESTEMPDIR/*.jpg; do
+    echo Frame: $panofile
+    run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" "$panofile" "$PTOTMPL"
   done
 else
   # Use parallel
   export -f print_debug
   export -f run_command
-  ls -1 $FRAMESTEMPDIR/*.jpg | parallel -j $PARALLELTHROTTLE --bar run_command "$DIR/gear360pano.cmd" -m -o "$OUTTEMPDIR" {} "$PTOTMPL"
+  ls -1 $FRAMESTEMPDIR/*.jpg | parallel $PARALLELEXTRAOPTS --bar run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" {} "$PTOTMPL"
 fi
 
 # Put stitched frames together

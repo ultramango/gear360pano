@@ -11,7 +11,8 @@ Latest Changes:
 
 - 2017-10-04: added ```-p``` option for parallel video stitching (contribution by kwahoo2).
 On some machines it should greatly reduce video stitching time (ex. 33 s vs ~13 s). Use
-with care, might freeze your machine.
+with care, might freeze your machine. Added ```-r``` option for panorama processing, it
+will remove source file (this used by video processing to save on disk space).
 - 2017-10-01: higher quality video output by default (override with ```--speed``` option), ability to
 set temporary directory for video, added 2k video support (contribution by durkie), few fixes, added
 tests for panorama and video (can be used as primitive performance mesaurement). Important: Linux
@@ -130,6 +131,7 @@ List of switches (Windows in brackets):
 * -n (/n) - do not use GPU (slower but safer)
 * -o (/o) directory - set output directory (default: html/data)
 * -q (/q) quality - set JPEG quality (default: 97)
+* -r - remove source file after processing (use with care)
 * -t (/t) directory - set temporary directory (default: systems' default)
 * -h (/h) - display help
 
@@ -197,4 +199,5 @@ Links:
 Few TODOs:
 
 * support more image sizes, not only 7k,
+* use GNU Parallel if more than one panorama is being stitched,
 * there's no vignetting correction, better lens correction could be created.

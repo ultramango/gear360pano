@@ -18,7 +18,7 @@ DIR=$(dirname `which $0`)
 T="./gear360video.cmd" # T - for simplicity, it's a test subject
 # Debug, yes = print debug messages
 DEBUG="no"
-VERSION="2"
+VERSION="3"
 
 #############
 ### Functions
@@ -153,7 +153,7 @@ rm ${testvideo}
 
 # *** 5. Speed option
 testvideo=$(create_test_video "3840x1920")
-exec_test "$T -s ${testvideo}" "4k video stitching and speed option"
+exec_test "$T -s ${testvideo}" "4k video stitching (speed option)"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
@@ -166,7 +166,7 @@ rm ${testvideo}
 # *** 6. Output directory
 testvideo=$(create_test_video "3840x1920")
 testdir=$(mktemp -d)
-exec_test "$T -o ${testdir} ${testvideo}" "4k video stitching with output directory"
+exec_test "$T -o ${testdir} ${testvideo}" "4k video stitching (output directory)"
 # Check if the video has been created
 outvideo=${testdir}/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
@@ -178,7 +178,7 @@ rm ${testvideo}
 
 # *** 7. Parallel processing
 testvideo=$(create_test_video "3840x1920")
-exec_test "$T -p ${testvideo}" "4k video stitching and parallel processing"
+exec_test "$T -p ${testvideo}" "4k video stitching (parallel processing)"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then

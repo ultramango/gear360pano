@@ -56,6 +56,7 @@ clean_up() {
 run_command() {
   # Remove empty arguments (it will confuse the executed command)
   cmd=("$@")
+  local i
   for i in "${!cmd[@]}"; do
     [ -n "${cmd[$i]}" ] || unset "cmd[$i]"
   done
@@ -177,6 +178,7 @@ print_help() {
   echo "-o|--output  DIR will set the output directory of panoramas"
   echo "             default: html/data"
   echo "-q|--quality QUALITY will set the JPEG quality to quality"
+  echo "-r|--remove  remove source file after processing (use with care)"
   echo "-t|--temp DIR set temporary directory (default: use system's"
   echo "             temporary directory)"
   echo "-h|--help    prints this help"
@@ -243,6 +245,12 @@ case $key in
     EXTRAENBLENDOPTIONS=""
     shift
     ;;
+  -r|--remove)
+    # Remove source file after processing
+    print_debug "Will remove source file after processing"
+    REMOVESOURCE=1
+    shift
+    ;;
   *)
     break
     ;;
@@ -250,7 +258,7 @@ esac
 done
 
 # Check argument(s)
-if [ -z "$1" ]; then
+if [ -z "${1+x}" ]; then
   print_help
   exit 1
 fi
@@ -266,16 +274,17 @@ if [ "$CREATEGALLERY" == "yes" ] && [ "$OUTDIR" != "html/data" ] && [ "$OUTDIR" 
   echo -e "\nGallery file list will be updated but output directory not set to html/data\n"
 fi
 
-for i in $1
+# TODO: add option for parallel
+for panofile in $1
 do
-  OUTNAMEPROTO=`dirname "$i"`/`basename "${i%.*}"`_pano.jpg
+  OUTNAMEPROTO=`dirname "$panofile"`/`basename "${panofile%.*}"`_pano.jpg
   OUTNAME=`basename $OUTNAMEPROTO`
   OUTNAMEFULL=$OUTDIR/$OUTNAME
 
   # Check if this already processed panorama
   # https://stackoverflow.com/questions/229551/string-contains-in-bash
   if [ $IGNOREPROCESSED == "yes" ] && [ -e "$OUTNAMEFULL" ]; then
-    echo "$i already processed, skipping... (override with -a)"
+    echo "$panofile already processed, skipping... (override with -a)"
     continue
   fi
 
@@ -284,7 +293,7 @@ do
     PTOTMPL="$2"
   else
     # Detect camera model for each image
-    CAMERAMODEL=`exiftool -s -s -s -Model $i`
+    CAMERAMODEL=`exiftool -s -s -s -Model $panofile`
     print_debug "Camera model: $CAMERAMODEL"
     case $CAMERAMODEL in
       SM-C200)
@@ -299,8 +308,13 @@ do
     esac
   fi
 
-  echo "Processing file: $i"
-  process_panorama $i $OUTNAMEFULL $PTOTMPL
+  echo "Processing panofile: $panofile"
+  process_panorama $panofile $OUTNAMEFULL $PTOTMPL
+
+  if [ ! -z "${REMOVESOURCE+x}" ]; then
+    echo "Removing: $panofile"
+    rm $panofile
+  fi
 done
 
 if [ "$CREATEGALLERY" == "yes" ]; then

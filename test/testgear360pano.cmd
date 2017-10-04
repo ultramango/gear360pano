@@ -18,7 +18,7 @@ DIR=$(dirname `which $0`)
 T="./gear360pano.cmd" # T - for simplicity, it's a test subject
 # Debug, yes = print debug messages
 DEBUG="no"
-VERSION="1"
+VERSION="2"
 
 #############
 ### Functions
@@ -170,6 +170,19 @@ else
 fi
 rm ${testimage}
 
+# *** 7. Remove source file
+testimage=$(create_test_image)
+exec_test "$T -r ${testimage}" "Single panorama stitching (remove source)"
+outimage=html/data/`basename "${testimage%.*}"`_pano.jpg
+if [ ! -f ${outimage} ]; then
+  echo "Extra check failed: output file (${outimage}) not found"
+else
+  rm ${outimage}
+fi
+if [ -f ${testimage} ]; then
+  echo "Extra check failed: source file exists (it shouldn't)"
+  rm ${testimage}
+fi
 
 # Negative tests
 idonotexist='ihopeidonotexist' # Something that does not exist
