@@ -253,8 +253,19 @@ fi
 
 # Put stitched frames together
 echo "Recoding the video..."
-# Detect source FPS
-SRCFPSSTR=`ffprobe -v fatal -of default=noprint_wrappers=1:nokey=1 -select_streams 0 -show_entries stream=r_frame_rate "$1"`
+# Detect source FPS (probe streams until some sane fps found, naive but should work)
+for streamno in {0..5}; do
+  SRCFPSSTR=`ffprobe -v fatal -of default=noprint_wrappers=1:nokey=1 -select_streams $streamno -show_entries stream=r_frame_rate "$1"`
+  print_debug "Stream: $streamno FPS: $SRCFPSSTR"
+  if [ $SRCFPSSTR != "0/0" ]; then
+    break;
+  fi
+done
+if [ $streamno -eq 5 ]; then
+  print_debug "Couldn't find FPS, assuming 30000/1001"
+  SRCFPSSTR="30000/1001"
+fi
+
 print_debug "Input video FPS: ${SRCFPSSTR}"
 
 # Re-encode video back with stitched images
