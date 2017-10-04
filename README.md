@@ -177,8 +177,7 @@ What is/might be wrong (loose notes about the script):
 * to speed-up stitching [multiblend](http://horman.net/multiblend/) is used, it means you have to install it,
 * video stitching works by converting it to image files, stitching them and then re-coding, it might
 require a lot of disk space (gigabytes or even more) as the long videos will result in many image
-files, this could beoptimised by removing files which are no longer needed, also check for left-over
-directories that might have not been removed,
+files,
 * ```-p``` option might be pretty resource hungry, your machine might slow down or freeze,
 use with care,
 * timelapse videos are not (yet?) supported under Windows (problems with sound).
