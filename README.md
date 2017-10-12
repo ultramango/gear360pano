@@ -64,7 +64,7 @@ compile it and install. After unpacking read ```build.txt```... or do this:
     unzip multiblendX.Y.Z.zip
     cd multiblend
     g++ -msse2 -O3 -ltiff -ltiffxx -ljpeg -lpng multiblend.cpp -o multiblend
-    # If that fails try this instead:
+    # If that fails try this instead (older g++):
     # g++ -msse2 -O3 multiblend.cpp -o multiblend -ltiff -ltiffxx -ljpeg -lpng
     sudo cp multiblend /usr/local/bin
 
