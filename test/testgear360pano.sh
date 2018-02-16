@@ -8,9 +8,9 @@
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
 T="./gear360pano.sh" # T - for simplicity, it's a test subject
-# Debug, yes = print debug messages
+# Debug, yes = print debug messages (might fail some tests due to ret value passing)
 DEBUG="no"
-VERSION="2"
+VERSION="3"
 
 #############
 ### Functions
@@ -83,7 +83,7 @@ exec_test() {
 
   # Remove stored command output
   print_debug "exec_test removing command output log: ${output}"
-  rm ${output}
+  rm -f ${output}
 
   # Lets return executed command status
   return $status
@@ -105,10 +105,9 @@ exec_test "$T ${testimage}" "Single panorama stitching"
 outimage=html/data/`basename "${testimage%.*}"`_pano.jpg
 if [ ! -f ${outimage} ]; then
   echo "Extra check failed: output file (${outimage}) not found"
-else
-  rm ${outimage}
 fi
-rm ${testimage}
+rm -f ${testimage}
+rm -f ${outimage}
 
 # *** 3. Multiple files with output
 testimage=$(create_test_image)
@@ -126,7 +125,7 @@ count=$(ls ${testout} | wc -l)
 if [ $count -ne 4 ]; then
   echo "Extra check on output file count file failed, expected: 4, got: ${count}"
 fi
-rm ${testimage}
+rm -f ${testimage}
 rm -rf ${testdir}
 
 # *** 4. No gpu
@@ -135,10 +134,9 @@ exec_test "$T -n ${testimage}" "Single panorama stitching (no gpu)"
 outimage=html/data/`basename "${testimage%.*}"`_pano.jpg
 if [ ! -f ${outimage} ]; then
   echo "Extra check failed: output file (${outimage}) not found"
-else
-  rm ${outimage}
 fi
-rm ${testimage}
+rm -f ${testimage}
+rm -f ${outimage}
 
 # *** 5. Use multiblend
 testimage=$(create_test_image)
@@ -146,21 +144,34 @@ exec_test "$T -m ${testimage}" "Single panorama stitching (multiblend)"
 outimage=html/data/`basename "${testimage%.*}"`_pano.jpg
 if [ ! -f ${outimage} ]; then
   echo "Extra check failed: output file (${outimage}) not found"
-else
-  rm ${outimage}
 fi
-rm ${testimage}
+rm -f ${testimage}
+rm -f ${outimage}
 
 # *** 6. Set jpeg compression
-testimage=$(create_test_image)
-exec_test "$T -q 5 ${testimage}" "Single panorama stitching (set quality)"
-outimage=html/data/`basename "${testimage%.*}"`_pano.jpg
-if [ ! -f ${outimage} ]; then
-  echo "Extra check failed: output file (${outimage}) not found"
+testimage1=$(create_test_image)
+exec_test "$T -q 99 ${testimage1}" "Single panorama stitching (set high quality)"
+outimage1=html/data/`basename "${testimage1%.*}"`_pano.jpg
+if [ ! -f ${outimage1} ]; then
+  echo "Extra check failed: output file (${outimage1}) not found"
 else
-  rm ${outimage}
+  # For comparison create low quality jpeg
+  testimage2=$(create_test_image)
+  exec_test "$T -q 5 ${testimage2}" "Single panorama stitching (set low quality)"
+  outimage2=html/data/`basename "${testimage2%.*}"`_pano.jpg
+  if [ ! -f ${outimage2} ]; then
+    echo "Extra check failed: output file (${outimage2}) not found"
+  else
+    # Check if size of testimage1 is bigger than testimage2
+    if ((`stat -c%s "$outimage1"` < `stat -c%s "$outimage2"`)); then
+      echo "Extra check failed: low quality image size bigger or equal than high quality"
+    fi
+  fi
 fi
-rm ${testimage}
+rm -f ${testimage1}
+rm -f ${testimage2}
+rm -f ${outimage2}
+rm -f ${outimage1}
 
 # *** 7. Remove source file
 testimage=$(create_test_image)
@@ -168,13 +179,12 @@ exec_test "$T -r ${testimage}" "Single panorama stitching (remove source)"
 outimage=html/data/`basename "${testimage%.*}"`_pano.jpg
 if [ ! -f ${outimage} ]; then
   echo "Extra check failed: output file (${outimage}) not found"
-else
-  rm ${outimage}
 fi
 if [ -f ${testimage} ]; then
   echo "Extra check failed: source file exists (it shouldn't)"
-  rm ${testimage}
 fi
+rm -f ${testimage}
+rm -f ${outimage}
 
 # Negative tests
 idonotexist='ihopeidonotexist' # Something that does not exist
@@ -192,25 +202,21 @@ exec_test "$T ${emptyfile}" "Bad input file" "1"
 testimage=$(create_test_image)
 outimage=html/data/`basename "${testimage%.*}"`_pano.jpg
 exec_test "$T -o ${idonotexist} ${testimage}" "Non-existing output directory" "1"
-if [ -f ${outimage} ]; then
-  rm ${outimage}
-fi
-rm ${testimage}
+rm -f ${testimage}
+rm -f ${outimage}
 
 # *** 5. Non existing temporary directory
 testimage=$(create_test_image)
 # Note: we expect exit code 0, as it should recover from non existing temporary directory
 exec_test "$T -t ${idonotexist} ${testimage}" "Non-existing temp directory" "0"
-rm ${testimage}
+rm -f ${testimage}
 
 # *** 6. Bad image size
 testimage=$(create_test_image "100x100")
 outimage=html/data/`basename "${testimage%.*}"`_pano.jpg
 exec_test "$T ${testimage}" "Bad input image size" "1"
-if [ -f ${outimage} ]; then
-  rm ${outimage}
-fi
-rm ${testimage}
+rm -f ${testimage}
+rm -f ${outimage}
 
 # Summary
 totalendts=`date +%s`

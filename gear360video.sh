@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
 
-# Script to stitch panoramic videos produced by Samsung Gear360 (and others?).
+# Script to stitch panoramic videos produced by Samsung Gear360.
+# Could be adopted to use with other cameras after creating pto file
+# (Hugin template)
 #
-# For help (hopefully) see:
+# For help see:
 # https://github.com/ultramango/gear360pano
 #
 # Names:
 # dec, DEC, decoding - means video -> images
 # enc, ENC, encoding - means stitched images -> video
-#
-# Trick with Win/Linux from here:
-# http://stackoverflow.com/questions/17510688/single-script-to-run-in-both-windows-batch-and-linux-bash
 
-################################ Linux part here ################################
 
 #############
 ### Constants

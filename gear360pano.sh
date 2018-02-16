@@ -1,24 +1,22 @@
 #!/usr/bin/env bash
 
 # This is a small script to stitch panorama images produced  by Samsung Gear360
+# Could be adopted to use with other cameras after creating pto file
+# (Hugin template)
 #
 # https://github.com/ultramango/gear360pano
-#
-# Trick with Win/Linux from here:
-# http://stackoverflow.com/questions/17510688/single-script-to-run-in-both-windows-batch-and-linux-bash
 
-################################ Linux part here
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
 DIR=$(dirname `which $0`)
 SCRIPTNAME=$0
-OUTDIR="$DIR/html/data"
+GALLERYDIR="html"
+OUTDIR="$DIR/$GALLERYDIR/data"
 OUTTMPNAME="out"
 PTOTMPL_SM_C200="$DIR/gear360sm-c200.pto"
 PTOTMPL_SM_R210="$DIR/gear360sm-r210.pto"
 JPGQUALITY=97
 PTOJPGFILENAME="dummy.jpg"
-GALLERYDIR="html"
 # Note, this file is inside GALLERYDIR
 GALLERYFILELIST="filelist.txt"
 # By default we will ignore files that have been processed
@@ -41,9 +39,7 @@ print_debug() {
 
 # Clean-up function
 clean_up() {
-  if [ -d "$TEMPDIR" ]; then
-    rm -rf "$TEMPDIR"
-  fi
+  rm -rf "$TEMPDIR"
 }
 
 # Function to check if a command fails, arguments:
@@ -51,6 +47,8 @@ clean_up() {
 # Source:
 # http://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 run_command() {
+  print_debug "run_command()"
+
   # Remove empty arguments (it will confuse the executed command)
   cmd=("$@")
   local i
@@ -81,6 +79,7 @@ run_command() {
 process_panorama() {
   print_debug "process_panorama()"
   print_debug "Args: $@"
+
   # Create temporary directory
   if [ -n "$TEMPDIRPREFIX" ]; then
     TEMPDIR=`mktemp -d -p $TEMPDIRPREFIX`
@@ -92,6 +91,7 @@ process_panorama() {
 
   # Stitch panorama (same file twice as input)
   echo "Processing input images (nona)"
+
   # We need to use run_command with many parameters, or $1 doesn't get
   # quoted correctly and we cannot use filenames with spaces
   run_command  "nona" \
@@ -112,7 +112,7 @@ process_panorama() {
     EXTRABLENDOPTS="--quiet"
   fi
 
-  # Add extra options for enblend (ex. gpu)/tmp/tmp.ctzbeoCfIn
+  # Add extra options for enblend (ex. gpu)
   if [ "$BLENDPROG" == "enblend" ]; then
     EXTRABLENDOPTS="$EXTRAENBLENDOPTIONS"
   fi
@@ -125,9 +125,10 @@ process_panorama() {
               "$TEMPDIR/${OUTTMPNAME}0001.tif"
 
   # TODO: not sure about the tag exclusion list...
-  # Note: there's no check as exiftool is needed by Hugin
-  IMG_WIDTH=7776
-  IMG_HEIGHT=3888
+  # Note: there's no check for exiftool as it is included with Hugin
+  IMG_SIZE=($(exiftool -s -s -s -ImageWidth -ImageHeight $1 | tr '\n' ' '))
+  IMG_WIDTH=${IMG_SIZE[1]}
+  IMG_HEIGHT=${IMG_SIZE[2]}
   echo "Setting EXIF data (exiftool)"
   run_command "exiftool" "-ProjectionType=equirectangular" \
               "-q" \
@@ -187,50 +188,25 @@ create_gallery() {
   ls -l *.mp4 *_pano.jpg > ${GALLERYFILELISTFULL}
 }
 
-# Source (modified)
+# Process arguments. Source (modified):
 # https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
 while [[ $# -gt 0 ]]
 do
 key="$1"
 
 case $key in
-  -q|--quality)
-    JPGQUALITY="$2"
-    # Two shifts because there's no shift in the loop
-    # otherwise we can't handle just "-h" option
-    shift
-    shift
-    ;;
-  -h|--help)
-    print_help
-    shift
-    exit 0
-    ;;
-  -o|--output)
-    OUTDIR="$2"
-    if [ ! -d "$2" ]; then
-      echo "Given output ($2) is not a directory, cannot continue"
-      exit 1
-    fi
-    shift
+  -a|--process-all)
+    IGNOREPROCESSED="no"
     shift
     ;;
   -g|--gallery)
     CREATEGALLERY="yes"
     shift
     ;;
-  -a|--process-all)
-    IGNOREPROCESSED="no"
+  -h|--help)
+    print_help
     shift
-    ;;
-  -t|--temp)
-    if [ -d "$2" ]; then
-      TEMPDIRPREFIX="$2"
-    else
-      echo "Given temporary ($2) is not a directory, using system default"
-    fi
-    shift
-    shift
+    exit 0
     ;;
   -m|--multiblend)
     BLENDPROG="multiblend"
@@ -242,10 +218,35 @@ case $key in
     EXTRAENBLENDOPTIONS=""
     shift
     ;;
+  -o|--output)
+    OUTDIR="$2"
+    if [ ! -d "$2" ]; then
+      echo "Given output ($2) is not a directory, cannot continue"
+      exit 1
+    fi
+    shift
+    shift
+    ;;
+  -q|--quality)
+    JPGQUALITY="$2"
+    # Two shifts because there's no shift in the loop
+    # otherwise we can't handle just "-h" option
+    shift
+    shift
+    ;;
   -r|--remove)
     # Remove source file after processing
     print_debug "Will remove source file after processing"
     REMOVESOURCE=1
+    shift
+    ;;
+  -t|--temp)
+    if [ -d "$2" ]; then
+      TEMPDIRPREFIX="$2"
+    else
+      echo "Given temporary ($2) is not a directory, using system default"
+    fi
+    shift
     shift
     ;;
   *)
@@ -262,11 +263,11 @@ fi
 
 # Check if we have the software to do it (Hugin, ImageMagick)
 # http://stackoverflow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
-type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it's not installed. Aborting."; exit 1; }
+type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it is not installed. Aborting."; exit 1; }
 
 STARTTS=`date +%s`
 
-# Warn early about the gallery
+# Warn early about the gallery if the output directory is somewhere else
 if [ "$CREATEGALLERY" == "yes" ] && [ "$OUTDIR" != "html/data" ] && [ "$OUTDIR" != "./html/data" ]; then
   echo -e "\nGallery file list will be updated but output directory not set to html/data\n"
 fi
@@ -278,14 +279,14 @@ do
   OUTNAME=`basename $OUTNAMEPROTO`
   OUTNAMEFULL=$OUTDIR/$OUTNAME
 
-  # Check if this already processed panorama
+  # Skip if this is already processed panorama
   # https://stackoverflow.com/questions/229551/string-contains-in-bash
   if [ $IGNOREPROCESSED == "yes" ] && [ -e "$OUTNAMEFULL" ]; then
     echo "$panofile already processed, skipping... (override with -a)"
     continue
   fi
 
-  # Is ther a pto override?
+  # Is there a pto override (second argument)?
   if [ -n "$2" ]; then
     PTOTMPL="$2"
   else
@@ -303,6 +304,7 @@ do
         PTOTMPL=$PTOTMPL_SM_C200
         ;;
     esac
+    print_debug "PTO file: $PTOTMPL"
   fi
 
   echo "Processing panofile: $panofile"
