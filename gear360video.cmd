@@ -240,15 +240,13 @@ print_debug "PTO template: ${PTOTMPL}"
 echo "Stitching frames..."
 if [ -z "${USEPARALLEL+x}" ]; then
   # No parallel
-  for panofile in $FRAMESTEMPDIR/*.jpg; do
-    echo Frame: $panofile
-    run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" "$panofile" "$PTOTMPL"
-  done
+  find $FRAMESTEMPDIR -type f -name '*.jpg' | xargs -Ipanofile run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" "panofile" "$PTOTMPL"
 else
   # Use parallel
   export -f print_debug
   export -f run_command
-  ls -1 $FRAMESTEMPDIR/*.jpg | parallel $PARALLELEXTRAOPTS --bar run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" {} "$PTOTMPL"
+  #ls -1 $FRAMESTEMPDIR/*.jpg | parallel $PARALLELEXTRAOPTS --bar run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" {} "$PTOTMPL"
+  find $FRAMESTEMPDIR -type f -name '*.jpg' | parallel $PARALLELEXTRAOPTS --bar run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" {} "$PTOTMPL"
 fi
 
 # Put stitched frames together
