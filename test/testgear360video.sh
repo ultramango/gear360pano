@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 # Test script for gear360video.sh
+# Note: the single test times might not sum-up to total test time
+#       because creating test videos also takes time
 
 #############
 ### Constants
@@ -10,7 +12,7 @@ DIR=$(dirname `which $0`)
 T="./gear360video.sh" # T - for simplicity, it's a test subject
 # Debug, yes = print debug messages
 DEBUG="no"
-VERSION="3"
+VERSION="4"
 
 #############
 ### Functions
@@ -91,7 +93,7 @@ exec_test() {
 
   # Remove stored command output
   print_debug "exec_test removing command output log: ${output}"
-  rm ${output}
+  rm -f ${output}
 
   # Lets return executed command status
   return $status
@@ -104,58 +106,59 @@ exec_test() {
 totalstartts=`date +%s`
 
 # Positive test, just go through options
-# *** 1. Help
+# *** Help
 exec_test "$T -h" "Print help"
 
-# *** 2. 4k video test
+# *** 4k video test
+echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920")
 exec_test "$T ${testvideo}" "4k video stitching"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
   echo "Extra check failed: output file (${outvideo}) not found"
-else
-  rm ${outvideo}
 fi
-rm ${testvideo}
+rm -f ${testvideo}
+rm -f ${outvideo}
 
-# *** 3. 2k video test
+# *** 2k video test
+echo "Creating test video..."
 testvideo=$(create_test_video "2560x1280")
 exec_test "$T ${testvideo}" "2k video stitching"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
   echo "Extra check failed: output file (${outvideo}) not found"
-  else
-    rm ${outvideo}
 fi
-rm ${testvideo}
+rm -f ${testvideo}
+rm -f ${outvideo}
 
-# *** 4. Timelapse video (10 fps and no sound)
+# *** Timelapse video (10 fps and no sound)
+echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920" "1" "10" "1")
 exec_test "$T ${testvideo}" "Timelapse video stitching"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
   echo "Extra check failed: output file (${outvideo}) not found"
-else
-  rm ${outvideo}
 fi
-rm ${testvideo}
+rm -f ${testvideo}
+rm -f ${outvideo}
 
-# *** 5. Speed option
+# *** Speed option
+echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920")
 exec_test "$T -s ${testvideo}" "4k video stitching (speed option)"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
   echo "Extra check failed: output file (${outvideo}) not found"
-else
-  rm ${outvideo}
 fi
-rm ${testvideo}
+rm -f ${testvideo}
+rm -f ${outvideo}
 
-# *** 6. Output directory
+# *** Output directory
+echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920")
 testdir=$(mktemp -d)
 exec_test "$T -o ${testdir} ${testvideo}" "4k video stitching (output directory)"
@@ -163,37 +166,60 @@ exec_test "$T -o ${testdir} ${testvideo}" "4k video stitching (output directory)
 outvideo=${testdir}/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
   echo "Extra check failed: output file (${outvideo}) not found"
-else
-  rm ${outvideo}
 fi
-rm ${testvideo}
+rm -f ${testvideo}
+rm -f ${outvideo}
 
-# *** 7. Parallel processing
+# *** Parallel processing
+echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920")
 exec_test "$T -p ${testvideo}" "4k video stitching (parallel processing)"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
   echo "Extra check failed: output file (${outvideo}) not found"
-else
-  rm ${outvideo}
 fi
-rm ${testvideo}
+rm -f ${testvideo}
+rm -f ${outvideo}
+
+# *** Long video and frames count
+test_duration="10"
+test_fps="29.97"
+echo "Creating test video..."
+testvideo=$(create_test_video "3840x1920" $test_duration $test_fps)
+exec_test "$T -p ${testvideo}" "4k long video frame count check"
+# Check if the video has been created
+outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
+if [ ! -f ${outvideo} ]; then
+  echo "Extra check failed: output file (${outvideo}) not found"
+fi
+frames_count=`ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1 ${outvideo}`
+# bash doesn't support floating point operations
+frames_count_expected=$(dc <<< "$test_duration $test_fps * 1/ p")
+if [ "$frames_count" -ne "$frames_count_expected" ]; then
+  echo "Extra check failed: input and output video frame count mismatch"
+  echo "Video duration: $test_duration"
+  echo "Video fps: $test_fps"
+  echo "Video frame count: $frames_count"
+  echo "Expected frame count: $frames_count_expected"
+fi
+rm -f ${testvideo}
+rm -f ${outvideo}
 
 # Negative tests
 idonotexist='ihopeidonotexist' # Something that does not exist
-# *** 1. No input
+# *** No input
 exec_test "$T" "No input file" "1"
 
-# *** 2. Non existing input
+# *** Non existing input
 exec_test "$T ${idonotexist}" "Non-existing input" "1"
 
-# *** 3. Non existing output directory
+# *** Non existing output directory
 testvideo=$(create_test_video "3840x1920")
 exec_test "$T -o ${idonotexist} ${testvideo}" "Non-existing output directory" "1"
-rm ${testvideo}
+rm -f ${testvideo}
 
-# *** 4. Non existing temp directory
+# *** Non existing temp directory
 testvideo=$(create_test_video "3840x1920")
 testdir=$(mktemp -d)
 exec_test "$T -o ${testdir} -t ${idonotexist} ${testvideo}" "Non-existing temp directory plus output dir" "0"
@@ -201,10 +227,9 @@ exec_test "$T -o ${testdir} -t ${idonotexist} ${testvideo}" "Non-existing temp d
 outvideo=${testdir}/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
   echo "Extra check failed: output file (${outvideo}) not found"
-else
-  rm ${outvideo}
 fi
-rm ${testvideo}
+rm -f ${testvideo}
+rm -f ${outvideo}
 
 # TODO: ffmpeg not installed (modify PATH and link required tools locally?)
 
