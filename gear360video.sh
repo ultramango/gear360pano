@@ -23,7 +23,6 @@ OUTDIR="$DIR/html/data"
 # Options, default is the quality option, overridable by speed parameter
 # Valid value is: 2-31, lower is better
 FFMPEGQUALITYDEC="-q:v 2"
-# FIXME: there's a problem with extra frames
 FFMPEGQUALITYENC="-c:v libx265 -crf 18"
 IMAGETMPLDEC="image%05d.jpg"
 IMAGETMPLENC="image%05d_pano.jpg"
@@ -275,7 +274,7 @@ fi
 print_debug "Input video FPS: ${SRCFPSSTR}"
 
 # Re-encode video back with stitched images
-run_command ffmpeg -y -f image2 -i "$OUTTEMPDIR/$IMAGETMPLENC" -r "${SRCFPSSTR}" -s "${SRCVIDEOSIZE}" $FFMPEGQUALITYENC "$OUTTEMPDIR/$TMPVIDEO"
+run_command ffmpeg -y -f image2 -framerate ${SRCFPSSTR} -i "$OUTTEMPDIR/$IMAGETMPLENC" -r "${SRCFPSSTR}" -s "${SRCVIDEOSIZE}" $FFMPEGQUALITYENC "$OUTTEMPDIR/$TMPVIDEO"
 
 # Check if there's audio present (https://stackoverflow.com/questions/21446804/find-if-video-file-has-audio-present-in-it)
 SRCHASAUDIO=`ffprobe -v fatal -of default=nw=1:nk=1 -show_streams -select_streams a -show_entries stream=codec_type "$1"`

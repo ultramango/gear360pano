@@ -198,15 +198,16 @@ test_duration="5"
 test_fps="29.97"
 echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920" $test_duration $test_fps)
-exec_test "$T -p ${testvideo}" "3840x1920 long video frame count check"
+exec_test "$T -p ${testvideo}" "3840x1920 video stitching (video length check)"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
   echo "Extra check failed: output file (${outvideo}) not found"
 fi
 frames_count=`ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1 ${outvideo}`
-# bash doesn't support floating point operations
-frames_count_expected=$(dc <<< "$test_duration $test_fps * 1/ p")
+# bash doesn't support floating point operations, need to use dc
+# Rounding from here: https://stackoverflow.com/questions/19322233/rounding-the-result-using-dc-desk-calculator
+frames_count_expected=$(dc <<< "$test_duration $test_fps * [_1*]sad.5r0>a+0k1/ p")
 if [ "$frames_count" -ne "$frames_count_expected" ]; then
   echo "Extra check failed: input and output video frame count mismatch"
   echo "Video duration: $test_duration"
