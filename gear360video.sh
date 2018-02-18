@@ -36,6 +36,9 @@ TMPVIDEO="tmpvideo.mp4"
 PARALLELEXTRAOPTS="--load 99% --noswap --memfree 500M"
 # Debug, yes = print debug messages
 DEBUG="no"
+# Global flag if temporary directories should be removed
+CLEANUP="yes"
+
 
 #############
 ### Functions
@@ -50,14 +53,20 @@ print_debug() {
 
 # Clean-up function
 clean_up() {
-  echo "Removing temporary directories..."
-  if [ -d "$FRAMESTEMPDIR" ]; then
-    print_debug "Removing frames directory: $FRAMESTEMPDIR"
-    rm -rf "$FRAMESTEMPDIR"
-  fi
-  if [ -d "$OUTTEMPDIR" ]; then
-    print_debug "Removing output directory: $OUTTEMPDIR"
-    rm -rf "$OUTTEMPDIR"
+  if [ "$CLEANUP" == "yes" ]; then
+    echo "Removing temporary directories..."
+    if [ -d "$FRAMESTEMPDIR" ]; then
+      print_debug "Removing frames directory: $FRAMESTEMPDIR"
+      rm -rf "$FRAMESTEMPDIR"
+    fi
+    if [ -d "$OUTTEMPDIR" ]; then
+      print_debug "Removing output directory: $OUTTEMPDIR"
+      rm -rf "$OUTTEMPDIR"
+    fi
+  else
+    echo "Keeping temporary directories..."
+    echo "Frames temp directory: $FRAMESTEMPDIR"
+    echo "Output temp directory: $OUTTEMPDIR"
   fi
 }
 
