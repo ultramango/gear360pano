@@ -21,21 +21,23 @@ FRAMESTEMPDIRSUFF="frames"
 OUTTEMPDIRSUFF="out"
 OUTDIR="$DIR/html/data"
 # Options, default is the quality option, overridable by speed parameter
+# Valid value is: 2-31, lower is better
 FFMPEGQUALITYDEC="-q:v 2"
 FFMPEGQUALITYENC="-c:v libx265 -x265-params crf=18"
 IMAGETMPLDEC="image%05d.jpg"
 IMAGETMPLENC="image%05d_pano.jpg"
-PTOTMPL4K="gear360video4k.pto"
-PTOTMPL2K="gear360video2k.pto"
+PTOTMPL4096="gear360video4096.pto"
+PTOTMPL3840="gear360video3840.pto"
+PTOTMPL2560="gear360video2560.pto"
 # This is a default, it will/should be overwritten anyway
-PTOTMPL="$DIR/${PTOTMPL4K}"
+PTOTMPL="$DIR/${PTOTMPL3840}"
 TMPAUDIO="tmpaudio.aac"
 TMPVIDEO="tmpvideo.mp4"
 # Throttle parallel processing to give some room for other processes
 # See: https://www.gnu.org/software/parallel/parallel_tutorial.html#Limiting-the-resources
 PARALLELEXTRAOPTS="--load 99% --noswap --memfree 500M"
 # Debug, yes = print debug messages
-DEBUG="no"
+DEBUG="yes"
 # Global flag if temporary directories should be removed
 CLEANUP="yes"
 
@@ -228,14 +230,17 @@ print_debug "Input video size: ${SRCVIDEOSIZE}"
 
 # Detect video size and select appriopriate pto file
 case $SRCVIDEOSIZE in
+  4096:2048)
+    PTOTMPL=$PTOTMPL4096
+    ;;
   3840:1920)
-    PTOTMPL=$PTOTMPL4K
+    PTOTMPL=$PTOTMPL3840
     ;;
   2560:1280)
-    PTOTMPL=$PTOTMPL2K
+    PTOTMPL=$PTOTMPL2560
     ;;
   *)
-    PTOTMPL=$PTOTMPL4K
+    PTOTMPL=$PTOTMPL3840
     ;;
 esac
 print_debug "PTO template: ${PTOTMPL}"

@@ -12,7 +12,7 @@ rem enc, ENC, encoding - means stitched images -> video
 set FFMPEGPATH=c:\Program Files\ffmpeg\bin
 set FRAMESTEMPDIR=frames
 set OUTTEMPDIR=frames_stitched
-set PTOTMPL=gear360video.pto
+set PTOTMPL=gear360video3840.pto
 rem %% is an escape character (note: this will fail on wine's cmd.exe)
 set IMAGETMPLDEC=image%%05d.jpg
 set IMAGETMPLENC=image%%05d_pano.jpg

@@ -5,9 +5,9 @@ m g1 i0 f0 m2 p0.00784314
 
 # image lines
 #-hugin  cropFactor=1
-i w3840 h1920 f2 v387.454063018623 Ra0 Rb0 Rc0 Rd0 Re0 Eev0 Er1 Eb1 r0 p0 y0 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b0.0115820133918171 c0 d-907.2 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S-39,1953,-57,2004 Vm5 n"C:\temp\pano_test\frames\image00017.png"
+i w3840 h1920 f2 v387.454063018623 Ra0 Rb0 Rc0 Rd0 Re0 Eev0 Er1 Eb1 r0 p0 y0 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b0.0115820133918171 c0 d-907.2 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S-39,1953,-57,2004 Vm5 n"dummy.jpg"
 #-hugin  cropFactor=1
-i w3840 h1920 f2 v372.778480484579 Ra0 Rb0 Rc0 Rd0 Re0 Eev0 Er1 Eb1 r0.597332522733759 p-0.335220286462938 y168.87925571057 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b-0.00193455996232153 c0 d907 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S1889,3890,-43,1973 Vm5 n"C:\temp\pano_test\frames\image00017.png"
+i w3840 h1920 f2 v372.778480484579 Ra0 Rb0 Rc0 Rd0 Re0 Eev0 Er1 Eb1 r0.597332522733759 p-0.335220286462938 y168.87925571057 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b-0.00193455996232153 c0 d907 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S1889,3890,-43,1973 Vm5 n"dummy.jpg"
 
 
 # specify variables that should be optimized
@@ -70,10 +70,10 @@ c n0 N1 x1586.5 y1659 X2303.5 Y1623 t0
 #hugin_optimizeReferenceImage 0
 #hugin_blender enblend
 #hugin_remapper nona
-#hugin_enblendOptions 
-#hugin_enfuseOptions 
+#hugin_enblendOptions
+#hugin_enfuseOptions
 #hugin_hdrmergeOptions -m avg -c
-#hugin_verdandiOptions 
+#hugin_verdandiOptions
 #hugin_outputLDRBlended true
 #hugin_outputLDRLayers false
 #hugin_outputLDRExposureRemapped false
