@@ -12,7 +12,7 @@ DIR=$(dirname `which $0`)
 T="./gear360video.sh" # T - for simplicity, it's a test subject
 # Debug, yes = print debug messages
 DEBUG="no"
-VERSION="4"
+VERSION="5"
 
 #############
 ### Functions
@@ -36,7 +36,7 @@ print_debug() {
 create_test_video() {
   local videoformat="mp4" # hardcoded for the moment
   # Default parameter: https://stackoverflow.com/questions/9332802/how-to-write-a-bash-script-that-takes-optional-input-arguments
-  local videosize=${1:-"3840x1920"} # Other video size: 2560x1280
+  local videosize=${1:-"3840x1920"} # Other video size: 4096x2048, 2560x1280
   local duration=${2:-"1"}
   local framerate=${3:-"29.97"}
   local nosound=${4:-"0"}
@@ -99,7 +99,6 @@ exec_test() {
   return $status
 }
 
-
 ########
 ### Main
 
@@ -109,10 +108,10 @@ totalstartts=`date +%s`
 # *** Help
 exec_test "$T -h" "Print help"
 
-# *** 4k video test
+# *** 4096x2048 video test
 echo "Creating test video..."
-testvideo=$(create_test_video "3840x1920")
-exec_test "$T ${testvideo}" "4k video stitching"
+testvideo=$(create_test_video "4096x2048")
+exec_test "$T ${testvideo}" "4096x2048 video stitching"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
@@ -121,10 +120,22 @@ fi
 rm -f ${testvideo}
 rm -f ${outvideo}
 
-# *** 2k video test
+# *** 3840x1920 video test
+echo "Creating test video..."
+testvideo=$(create_test_video "3840x1920")
+exec_test "$T ${testvideo}" "3840x1920 video stitching"
+# Check if the video has been created
+outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
+if [ ! -f ${outvideo} ]; then
+  echo "Extra check failed: output file (${outvideo}) not found"
+fi
+rm -f ${testvideo}
+rm -f ${outvideo}
+
+# *** 2560x1280 video test
 echo "Creating test video..."
 testvideo=$(create_test_video "2560x1280")
-exec_test "$T ${testvideo}" "2k video stitching"
+exec_test "$T ${testvideo}" "2560x1280 video stitching"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
@@ -148,7 +159,7 @@ rm -f ${outvideo}
 # *** Speed option
 echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920")
-exec_test "$T -s ${testvideo}" "4k video stitching (speed option)"
+exec_test "$T -s ${testvideo}" "3840x1920 video stitching (speed option)"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
@@ -161,7 +172,7 @@ rm -f ${outvideo}
 echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920")
 testdir=$(mktemp -d)
-exec_test "$T -o ${testdir} ${testvideo}" "4k video stitching (output directory)"
+exec_test "$T -o ${testdir} ${testvideo}" "3840x1920 video stitching (output directory)"
 # Check if the video has been created
 outvideo=${testdir}/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
@@ -173,7 +184,7 @@ rm -f ${outvideo}
 # *** Parallel processing
 echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920")
-exec_test "$T -p ${testvideo}" "4k video stitching (parallel processing)"
+exec_test "$T -p ${testvideo}" "3840x1920 video stitching (parallel processing)"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then
@@ -183,11 +194,11 @@ rm -f ${testvideo}
 rm -f ${outvideo}
 
 # *** Long video and frames count
-test_duration="10"
+test_duration="5"
 test_fps="29.97"
 echo "Creating test video..."
 testvideo=$(create_test_video "3840x1920" $test_duration $test_fps)
-exec_test "$T -p ${testvideo}" "4k long video frame count check"
+exec_test "$T -p ${testvideo}" "3840x1920 long video frame count check"
 # Check if the video has been created
 outvideo=html/data/`basename "${testvideo%.*}"`_pano.mp4
 if [ ! -f ${outvideo} ]; then

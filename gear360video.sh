@@ -23,7 +23,8 @@ OUTDIR="$DIR/html/data"
 # Options, default is the quality option, overridable by speed parameter
 # Valid value is: 2-31, lower is better
 FFMPEGQUALITYDEC="-q:v 2"
-FFMPEGQUALITYENC="-c:v libx265 -x265-params crf=18"
+# FIXME: there's a problem with extra frames
+FFMPEGQUALITYENC="-c:v libx265 -crf 18"
 IMAGETMPLDEC="image%05d.jpg"
 IMAGETMPLENC="image%05d_pano.jpg"
 PTOTMPL4096="gear360video4096.pto"
@@ -37,7 +38,7 @@ TMPVIDEO="tmpvideo.mp4"
 # See: https://www.gnu.org/software/parallel/parallel_tutorial.html#Limiting-the-resources
 PARALLELEXTRAOPTS="--load 99% --noswap --memfree 500M"
 # Debug, yes = print debug messages
-DEBUG="yes"
+DEBUG="no"
 # Global flag if temporary directories should be removed
 CLEANUP="yes"
 
@@ -183,7 +184,7 @@ case $key in
     ;;
   -s|--speed)
     FFMPEGQUALITYDEC=""
-    FFMPEGQUALITYENC="-vcodec libx264"
+    FFMPEGQUALITYENC="-c:v libx264 -preset ultrafast"
     shift
     ;;
   *)

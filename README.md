@@ -10,8 +10,8 @@ generation 1 (SM-C200) and 2 (2017 or SM-R210).
 Latest Changes:
 
 - 2018-02-18: splitted scripts into Windows and Linux part (.bat, .sh), updated
-pannellum library, fixed problem with xargs. Known issues: extra frames are being
-added to video. Note: Windows version not tested.
+pannellum library, fixed problem with xargs. Added support for 4096 (gen2?) videos.
+Known issues: extra frames are being added to video. Note: Windows version not tested.
 - 2017-10-04: added ```-p``` option for parallel video stitching (contribution by kwahoo2).
 On some machines it should greatly reduce video stitching time (ex. 33 s vs ~13 s). Use
 with care, might freeze your machine. Added ```-r``` option for panorama processing, it
