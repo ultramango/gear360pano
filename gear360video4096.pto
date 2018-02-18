@@ -1,0 +1,79 @@
+# hugin project file
+#hugin_ptoversion 2
+p f2 w4096 h2048 v360  E0 R0 n"TIFF_m c:LZW r:CROP"
+m g1 i0 f0 m2 p0.00784314
+
+# image lines
+#-hugin  cropFactor=1
+i w4096 h2048 f2 v353.659869545144 Ra0 Rb0 Rc0 Rd0 Re0 Eev0 Er1 Eb1 r0 p0 y0 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b0 c0 d-1024 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S0,2048,0,2048 Vm5 n"dummy.jpg"
+#-hugin  cropFactor=1
+i w4096 h2048 f2 v418.616181773928 Ra0 Rb0 Rc0 Rd0 Re0 Eev0 Er1 Eb1 r0.0284780030730867 p0.889607846845734 y179.741756847921 TrX0 TrY0 TrZ0 Tpy0 Tpp0 j0 a0 b0 c0 d1024 e0 g0 t0 Va1 Vb0 Vc0 Vd0 Vx0 Vy0  S2048,4096,0,2048 Vm5 n"dummy.jpg"
+
+
+# specify variables that should be optimized
+v v0
+v Ra0
+v Rb0
+v Rc0
+v Rd0
+v Re0
+v Vb0
+v Vc0
+v Vd0
+v v1
+v Ra1
+v Rb1
+v Rc1
+v Rd1
+v Re1
+v Eev1
+v r1
+v p1
+v y1
+v Vb1
+v Vc1
+v Vd1
+v
+
+
+# control points
+c n0 N1 x1852 y544 X2252 Y548 t0
+c n0 N1 x1922 y1111 X2075 Y1114 t0
+c n0 N1 x1950 y865 X2124 Y859 t0
+c n0 N1 x1937 y737 X2177 Y739 t0
+c n0 N1 x1906 y642 X2208 Y649 t0
+c n0 N1 x1619 y333 X2423 Y280 t0
+c n0 N1 x1693 y328 X2419 Y350 t0
+c n0 N1 x1737 y375 X2377 Y392 t0
+c n0 N1 x143 y884 X4066 Y865 t0
+c n0 N1 x71 y877 X4009 Y876 t0
+c n0 N1 x73 y944 X4029 Y940 t0
+c n0 N1 x147 y849 X4056 Y820 t0
+
+#hugin_optimizeReferenceImage 0
+#hugin_blender enblend
+#hugin_remapper nona
+#hugin_enblendOptions
+#hugin_enfuseOptions
+#hugin_hdrmergeOptions -m avg -c
+#hugin_verdandiOptions
+#hugin_outputLDRBlended true
+#hugin_outputLDRLayers false
+#hugin_outputLDRExposureRemapped false
+#hugin_outputLDRExposureLayers false
+#hugin_outputLDRExposureBlended false
+#hugin_outputLDRStacks false
+#hugin_outputLDRExposureLayersFused false
+#hugin_outputHDRBlended false
+#hugin_outputHDRLayers false
+#hugin_outputHDRStacks false
+#hugin_outputLayersCompression LZW
+#hugin_outputImageType jpg
+#hugin_outputImageTypeCompression LZW
+#hugin_outputJPEGQuality 94
+#hugin_outputImageTypeHDR exr
+#hugin_outputImageTypeHDRCompression LZW
+#hugin_outputStacksMinOverlap 0.7
+#hugin_outputLayersExposureDiff 0.5
+#hugin_optimizerMasterSwitch 0
+#hugin_optimizerPhotoMasterSwitch 21
