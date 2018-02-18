@@ -232,16 +232,14 @@ esac
 print_debug "PTO template: ${PTOTMPL}"
 
 # Stitch frames
+export -f run_command print_debug clean_up
 echo "Stitching frames..."
 if [ -z "${USEPARALLEL+x}" ]; then
   # No parallel
-  find $FRAMESTEMPDIR -type f -name '*.jpg' | xargs -Ipanofile run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" "panofile" "$PTOTMPL"
+  find $FRAMESTEMPDIR -type f -name '*.jpg' | xargs -Ipanofile bash -c "run_command \"$DIR/gear360pano.sh\" -r -m -o \"$OUTTEMPDIR\" \"panofile\" \"$PTOTMPL\""
 else
   # Use parallel
-  export -f print_debug
-  export -f run_command
-  #ls -1 $FRAMESTEMPDIR/*.jpg | parallel $PARALLELEXTRAOPTS --bar run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" {} "$PTOTMPL"
-  find $FRAMESTEMPDIR -type f -name '*.jpg' | parallel $PARALLELEXTRAOPTS --bar run_command "$DIR/gear360pano.cmd" -r -m -o "$OUTTEMPDIR" {} "$PTOTMPL"
+  find $FRAMESTEMPDIR -type f -name '*.jpg' | parallel $PARALLELEXTRAOPTS --bar run_command "$DIR/gear360pano.sh" -r -m -o "$OUTTEMPDIR" {} "$PTOTMPL"
 fi
 
 # Put stitched frames together
