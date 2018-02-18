@@ -6,6 +6,7 @@ Simple gallery for panoramic videos and photos.
 
 Latest Changes:
 
+- 2018-02-18: updated Pannellum library to 2.4.0
 - 2017-06-09: moved to Pannellum library.
 - 2017-05-16: initial version.
 
