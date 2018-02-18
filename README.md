@@ -9,7 +9,7 @@ generation 1 (SM-C200) and 2 (2017 or SM-R210).
 
 Latest Changes:
 
-- 2018-02-18: splitted scripts into Windows and unix part (.bat, .sh), updated
+- 2018-02-18: splitted scripts into Windows and Linux part (.bat, .sh), updated
 pannellum library, fixed problem with xargs. Known issues: extra frames are being
 added to video. Note: Windows version not tested.
 - 2017-10-04: added ```-p``` option for parallel video stitching (contribution by kwahoo2).
@@ -59,7 +59,7 @@ Use your distributions' package manager to install [Hugin](http://hugin.sourcefo
 
     apt-get install hugin
 
-Do the same for ```ffmpeg``` if you want video stitching, it is usually installed on many systems.
+Do the same for ```ffmpeg``` if you want video stitching, it is usually installed by default on many Linux distributions.
 
 [multiblend](http://horman.net/multiblend/) is a bit more tricky. In most cases you will have to manually
 compile it and install. After unpacking read ```build.txt```... or do this:
@@ -104,16 +104,16 @@ Clone or download zip of this project then unpack it somewhere.
 
 Open console or command line (Win key + R then ```cmd.exe```), go to directory where you cloned/unpacked this project.
 
-Usage (example):
+Usage (example for Linux, for Windows use ```gear360pano.cmd```):
 
-    gear360pano.cmd *.JPG
+    gear360pano.sh *.JPG
 
     # For Linux and GNU Parallel
-    ls -1 path/to/files/*.JPG | parallel --load 99% --noswap --memfree 500M --bar ./gear360pano.cmd {}
+    ls -1 path/to/files/*.JPG | parallel --load 99% --noswap --memfree 500M --bar ./gear360pano.sh {}
 
-Output (example for Linux):
+Output (example for Linux, for Windows use ```gear360pano.cmd```):
 
-    $../../gear360pano.cmd -a 360_0010.JPG
+    $./gear360pano.sh 360_0010.JPG
     Processing file: 360_0010.JPG
     Processing input images (nona)
     nona: using graphics card: NVIDIA Corporation GeForce GTX 1080/PCIe/SSE2
@@ -162,9 +162,9 @@ it works with bash,
 
 ### Videos
 
-For videos:
+For videos (example for Linux):
 
-    ./gear360video.cmd video.mp4
+    ./gear360video.sh video.mp4
 
 This should produce ```video_pano.mp4``` in ```html/data``` directory (default), output file can be
 given as a second argument (but not full path, see ```-o``` parameter).
