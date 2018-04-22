@@ -17,8 +17,8 @@ set FRAMESTEMPDIR=frames
 set STITCHEDTEMPDIR=frames_stitched
 set OUTDIR="%SCRIPTPATH%\html\data"
 set FFMPEGPATH=c:\Program Files\ffmpeg\bin
-set FFMPEGQUALITYDEC="-q:v 2"
-set FFMPEGQUALITYENC="-c:v libx265 -crf 18"
+set FFMPEGQUALITYDEC=-q:v 2
+set FFMPEGQUALITYENC=-c:v libx265 -crf 18
 rem %% is an escape character (note: this will fail on wine's cmd.exe)
 set IMAGETMPLDEC=image%%05d.jpg
 set IMAGETMPLENC=image%%05d_pano.jpg
@@ -68,11 +68,11 @@ if "%FIRSTCHAR%" == "/" (
 ) else (
   if %PARAMCOUNT% EQU 0 (
     rem call :PRINT_DEBUG Input file: %_TMP%
-    set INNAME=%_TMP%
+    set VIDINNAME=%_TMP%
   )
   if %PARAMCOUNT% EQU 1 (
     rem call :PRINT_DEBUG Setting PTO: %_TMP%
-    set OUTNAME=%_TMP%
+    set OUTVIDNAME=%_TMP%
   )
   set /a PARAMCOUNT+=1
 )
@@ -83,13 +83,13 @@ rem Start timer
 set start=%time%
 
 rem Check arguments
-IF "%INNAME%" == "" goto NOARGS
+IF "%VIDINNAME%" == "" goto NOARGS
 
 rem Check if second argument present, if not, set some default for output filename
-rem This is here, because for whatever reason OUTNAME gets overriden by
+rem This is here, because for whatever reason OUTVIDNAME gets overriden by
 rem the last iterated filename if this is at the beginning (for loop is buggy?)
-if "%OUTNAME%" neq "" goto SETNAMEOK
-set OUTNAME="%~n1_pano.mp4"
+if "%OUTVIDNAME%" neq "" goto SETNAMEOK
+call :MAKEOUTNAME %VIDINNAME%
 
 :SETNAMEOK
 rem Check ffmpeg...
@@ -109,7 +109,7 @@ mkdir %STITCHEDTEMP%
 
 rem Execute commands (as simple as it is)
 echo "Converting video to images..."
-"%FFMPEGPATH%\ffmpeg.exe" -y -i %INNAME% %FRAMESTEMP%\%IMAGETMPLDEC%
+"%FFMPEGPATH%\ffmpeg.exe" -y -i %VIDINNAME% %FRAMESTEMP%\%IMAGETMPLDEC%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 rem Detect video size and match Hugin template file
@@ -118,7 +118,7 @@ set TMPVIDSIZE=%MYTEMPDIR%\vidsize.tmp
                            -of csv ^
                            -select_streams v:0 ^
                            -show_entries stream=height,width ^
-                           %INNAME% > %TMPVIDSIZE%
+                           %VIDINNAME% > %TMPVIDSIZE%
 
 for /f "tokens=1-18* delims=," %%A in (%TMPVIDSIZE%) do (
   set VIDSIZE=%%~B:%%~C
@@ -135,7 +135,7 @@ set TMPFPS=%MYTEMPDIR%\vidfps.tmp
                            -of csv ^
                            -select_streams v:0 ^
                            -show_entries stream=r_frame_rate ^
-                           %INNAME% > %TMPFPS%
+                           %VIDINNAME% > %TMPFPS%
 
 for /f "tokens=1-18* delims=," %%A in (%TMPFPS%) do (
   set VIDFPS=%%~B
@@ -144,15 +144,10 @@ del %TMPFPS%
 
 rem Stitching
 echo "Stitching frames..."
-for %%f in (%FRAMESTEMP%\*.jpg) do (
-rem For whatever reason (this has to be at the beginning of the line!)
-  echo "Processing frame %%f"
-rem TODO: There should be some error checking
-  "%SCRIPTPATH%\gear360pano.cmd" /m /o "%STITCHEDTEMP%" "%%f" "%PTOTMPL%"
-)
+call "%SCRIPTPATH%\gear360pano.cmd" /m /o "%STITCHEDTEMP%" "%FRAMESTEMP%\*.jpg" "%PTOTMPL%"
 
 echo "Reencoding video..."
-"%FFMPEGPATH%/ffmpeg.exe" -y -f image2 -i %STITCHEDTEMP%/%IMAGETMPLENC% -r %VIDFPS% -s %VIDSIZE% %FFMPEGQUALITYENC% %STITCHEDTEMP%/%TMPVIDEO%
+"%FFMPEGPATH%\ffmpeg.exe" -y -f image2 -i %STITCHEDTEMP%\%IMAGETMPLENC% -r %VIDFPS% -s %VIDSIZE% %FFMPEGQUALITYENC% %STITCHEDTEMP%\%TMPVIDEO%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 rem Check if there's audio
@@ -161,27 +156,32 @@ set TMPHASAUDIO=%MYTEMPDIR%\hasaudio.tmp
                           -of default=nw=1:nk=1 ^
                           -select_streams a ^
                           -show_entries stream=codec_type ^
-                          %INNAME% > %TMPHASAUDIO%
+                          %VIDINNAME% > %TMPHASAUDIO%
 
 set HASAUDIO=<%TMPHASAUDIO%
 del %TMPHASAUDIO%
 
-if %HASAUDIO% neq "" (
+if "%HASAUDIO%" neq "" (
   echo "Extracting audio..."
-  "%FFMPEGPATH%\ffmpeg.exe" -y -i %1 -vn -acodec copy %STITCHEDTEMP%/%TMPAUDIO%
+  "%FFMPEGPATH%\ffmpeg.exe" -y -i %1 -vn -acodec copy %STITCHEDTEMP%\%TMPAUDIO%
   if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
   echo "Merging audio..."
-  "%FFMPEGPATH%\ffmpeg.exe" -y -i %STITCHEDTEMP%/%TMPVIDEO% -i %STITCHEDTEMP%/%TMPAUDIO% -c:v copy -c:a aac -strict experimental %OUTNAME%
+  "%FFMPEGPATH%\ffmpeg.exe" -y -i %STITCHEDTEMP%\%TMPVIDEO% -i %STITCHEDTEMP%\%TMPAUDIO% -c:v copy -c:a aac -strict experimental %OUTVIDNAME%
   if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 )
 
 rem Clean-up (f - force, read-only & dirs, q - quiet)
-del /f /q %FRAMESTEMPDIR%
-del /f /q %OUTTEMPDIR%
+del /f /q %FRAMESTEMP%
+del /f /q %STITCHEDTEMP%
 
-echo Video written to %OUTNAME%
+echo Video written to %OUTVIDNAME%
 goto eof
+
+rem Filename extraction works only with %1, we need this workaround
+:MAKEOUTNAME
+set OUTVIDNAME="%~n1_pano.mp4"
+exit /b 0
 
 :NOARGS
 echo Script to stitch raw panoramic videos.
@@ -218,7 +218,6 @@ goto eof
 if %DEBUG% == "yes" (
   echo DEBUG: %1 %2 %3 %4 %5 %6 %7 %8 %9
 )
-
 exit /b 0
 
 :eof
