@@ -10,6 +10,7 @@ set DEBUG=""
 rem This is used as return value
 set RETVAL=
 set EXITCODE=0
+set VERSION=1
 
 goto MAIN
 
@@ -56,7 +57,7 @@ call :PRINT_DEBUG exec_test command: %TESTCMD%, descr: %TESTDESCR%, ^
 
 echo --------
 echo %TESTDESCR%
-CALL %TESTCMD% > %LOGOUTPUT%
+call %TESTCMD% > %LOGOUTPUT%
 set EXITCODE=%ERRORLEVEL%
 set end=%time%
 
@@ -84,12 +85,14 @@ if 1%ms% lss 100 set ms=0%ms%
 
 rem mission accomplished
 set /a totalsecs = %hours%*3600 + %mins%*60 + %secs%
-
 echo Test took: %totalsecs% s
-
+set RETVAL=
 exit /b 0
 
 :MAIN
+
+rem Test suite version
+echo Test suite version: %VERSION%
 
 rem Image magick?
 if not exist "%IMGMAGCONV%" goto NOIMGMAG
@@ -100,7 +103,9 @@ call :EXEC_TEST "%T% /h" "Help test"
 rem Simple image test
 call :TEST_IMAGE
 set IMAGE=%RETVAL%
-call :EXEC_TEST "%T% %IMAGE%"
+call :EXEC_TEST "%T% %IMAGE%" "Simple panorama test"
+
+echo Done
 
 goto eof
 
