@@ -49,7 +49,7 @@ create_test_video() {
   if [ ${nosound} -eq 0 ]; then
     soundopt="-f lavfi -i sine=frequency=1000:sample_rate=48000:duration=${duration}"
   fi
-  ffmpeg -loglevel quiet -y -f lavfi -i testsrc=duration=${duration}:size=${videosize}:rate=30 ${soundopt} -f ${videoformat} ${filename}
+  ffmpeg -loglevel quiet -y -f lavfi -i testsrc=duration=${duration}:size=${videosize}:rate=${framerate} ${soundopt} -f ${videoformat} ${filename}
 
   echo "${filename}"
 }
