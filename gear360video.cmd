@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 
 rem Script to stitch panoramic videos produced by Samsung Gear360.
 rem Could be adopted to use with other cameras after creating pto file
@@ -22,10 +22,10 @@ set FFMPEGQUALITYENC="-c:v libx265 -crf 18"
 rem %% is an escape character (note: this will fail on wine's cmd.exe)
 set IMAGETMPLDEC=image%%05d.jpg
 set IMAGETMPLENC=image%%05d_pano.jpg
-set PTOTMPL4096="gear360video4096.pto"
-set PTOTMPL3840="gear360video3840.pto"
-set PTOTMPL2560="gear360video2560.pto"
-set PTOTMPL="%SCRIPTPATH%\%PTOTMPL3840%"
+set PTOTMPL4096=gear360video4096.pto
+set PTOTMPL3840=gear360video3840.pto
+set PTOTMPL2560=gear360video2560.pto
+set PTOTMPL=%SCRIPTPATH%\%PTOTMPL3840%
 set TMPAUDIO=tmpaudio.aac
 set TMPVIDEO=tmpvideo.mp4
 set DEBUG=""
@@ -61,7 +61,6 @@ if "%FIRSTCHAR%" == "/" (
     rem call :PRINT_DEBUG Setting temporary dir: %2
     if not exist "%2" (
       echo Directory "%2" does not exist, using system default
-      set MYTEMPDIR=%TEMP%
     ) else (
       set MYTEMPDIR=%2
     )
@@ -98,6 +97,10 @@ if exist "%FFMPEGPATH%/ffmpeg.exe" goto FFMPEGOK
 goto NOFFMPEG
 
 :FFMPEGOK
+
+rem Temporary directory set?
+if "%MYTEMPDIR%" == "" set MYTEMPDIR=%TEMP%
+
 rem Create temporary directories
 set FRAMESTEMP=%MYTEMPDIR%\%FRAMESTEMPDIR%
 set STITCHEDTEMP=%MYTEMPDIR%\%STITCHEDTEMPDIR%
@@ -105,47 +108,47 @@ mkdir %FRAMESTEMP%
 mkdir %STITCHEDTEMP%
 
 rem Execute commands (as simple as it is)
-echo Converting video to images...
-"%FFMPEGPATH%/ffmpeg.exe" -y -i %1 %FRAMESTEMP%/%IMAGETMPLDEC%
+echo "Converting video to images..."
+"%FFMPEGPATH%\ffmpeg.exe" -y -i %INNAME% %FRAMESTEMP%\%IMAGETMPLDEC%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 rem Detect video size and match Hugin template file
-TMPVIDSIZE=%MYTEMPDIR%\vidsize.tmp
-"%FFMPEGPATH%/ffprobe.exe" -v error ^
+set TMPVIDSIZE=%MYTEMPDIR%\vidsize.tmp
+"%FFMPEGPATH%\ffprobe.exe" -v error ^
                            -of csv ^
                            -select_streams v:0 ^
                            -show_entries stream=height,width ^
                            %INNAME% > %TMPVIDSIZE%
 
 for /f "tokens=1-18* delims=," %%A in (%TMPVIDSIZE%) do (
-  VIDSIZE=%%~B:%%~C
+  set VIDSIZE=%%~B:%%~C
 )
 del %TMPVIDSIZE%
 
-if "%VIDSIZE%"=="4096:2048" set PTOTMPL=%PTOTMPL4096%
-if "%VIDSIZE%"=="3840:1920" set PTOTMPL=%PTOTMPL3840%
-if "%VIDSIZE%"=="2560:1280" set PTOTMPL=%PTOTMPL2560%
+if "%VIDSIZE%"=="4096:2048" set PTOTMPL=%SCRIPTPATH%\%PTOTMPL4096%
+if "%VIDSIZE%"=="3840:1920" set PTOTMPL=%SCRIPTPATH%\%PTOTMPL3840%
+if "%VIDSIZE%"=="2560:1280" set PTOTMPL=%SCRIPTPATH%\%PTOTMPL2560%
 
 rem Detect framerate
-TMPFPS=%MYTEMPDIR%\vidfps.tmp
-"%FFMPEGPATH%/ffprobe.exe" -v error ^
+set TMPFPS=%MYTEMPDIR%\vidfps.tmp
+"%FFMPEGPATH%\ffprobe.exe" -v error ^
                            -of csv ^
                            -select_streams v:0 ^
                            -show_entries stream=r_frame_rate ^
                            %INNAME% > %TMPFPS%
 
 for /f "tokens=1-18* delims=," %%A in (%TMPFPS%) do (
-  VIDFPS=%%~B
+  set VIDFPS=%%~B
 )
 del %TMPFPS%
 
 rem Stitching
-echo Stitching frames...
-for %%f in (%FRAMESTEMP%/*.jpg) do (
+echo "Stitching frames..."
+for %%f in (%FRAMESTEMP%\*.jpg) do (
 rem For whatever reason (this has to be at the beginning of the line!)
-  echo Processing frame %FRAMESTEMP%\%%f
+  echo "Processing frame %%f"
 rem TODO: There should be some error checking
-  call gear360pano.cmd /m /o %STITCHEDTEMP% %FRAMESTEMP%\%%f %PTOTMPL%
+  "%SCRIPTPATH%\gear360pano.cmd" /m /o "%STITCHEDTEMP%" "%%f" "%PTOTMPL%"
 )
 
 echo "Reencoding video..."
@@ -153,23 +156,23 @@ echo "Reencoding video..."
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 rem Check if there's audio
-TMPHASAUDIO=%MYTEMPDIR%\hasaudio.tmp
-"%FFMPEGPATH%/ffprobe.exe" -v error ^
+set TMPHASAUDIO=%MYTEMPDIR%\hasaudio.tmp
+"%FFMPEGPATH%\ffprobe.exe" -v error ^
                           -of default=nw=1:nk=1 ^
                           -select_streams a ^
                           -show_entries stream=codec_type ^
                           %INNAME% > %TMPHASAUDIO%
 
-HASAUDIO=<%TMPHASAUDIO%
+set HASAUDIO=<%TMPHASAUDIO%
 del %TMPHASAUDIO%
 
 if %HASAUDIO% neq "" (
   echo "Extracting audio..."
-  "%FFMPEGPATH%/ffmpeg.exe" -y -i %1 -vn -acodec copy %STITCHEDTEMP%/%TMPAUDIO%
+  "%FFMPEGPATH%\ffmpeg.exe" -y -i %1 -vn -acodec copy %STITCHEDTEMP%/%TMPAUDIO%
   if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
   echo "Merging audio..."
-  "%FFMPEGPATH%/ffmpeg.exe" -y -i %STITCHEDTEMP%/%TMPVIDEO% -i %STITCHEDTEMP%/%TMPAUDIO% -c:v copy -c:a aac -strict experimental %OUTNAME%
+  "%FFMPEGPATH%\ffmpeg.exe" -y -i %STITCHEDTEMP%/%TMPVIDEO% -i %STITCHEDTEMP%/%TMPAUDIO% -c:v copy -c:a aac -strict experimental %OUTNAME%
   if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 )
 

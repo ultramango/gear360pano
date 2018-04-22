@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 
 rem This is a small script to stitch panorama images produced  by Samsung Gear360
 rem Could be adopted to use with other cameras after creating pto file (Hugin
@@ -47,7 +47,10 @@ set _TMP=%1
 set FIRSTCHAR=%_TMP:~0,1%
 rem No arguments?
 rem call :PRINT_DEBUG Current arg: %_TMP%
-if "%_TMP%" == "" goto PARAMDONE
+if '%_TMP%' == '' goto PARAMDONE
+rem This is to fix weird "bug" when passing quoted files
+rem https://stackoverflow.com/questions/31358869/problems-checking-if-string-is-quoted-and-adding-quotes-to-string
+if !_TMP:~0^,1!!_TMP:~-1! equ "" set FIRSTCHAR="x"
 rem Process arguments
 if "%FIRSTCHAR%" == "/" (
   set SWITCH=!_TMP:~1,2!
@@ -86,8 +89,9 @@ if "%FIRSTCHAR%" == "/" (
     )
   )
   if /i "!SWITCH!" == "r" (
+    echo "Mark 7"
     rem call :PRINT_DEBUG Will remove source file(s)
-    set REMOVESRCFILE="yes"
+    set REMOVESRCFILE=yes
   )
   if /i "!SWITCH!" == "m" (
     rem call :PRINT_DEBUG Using multiblend as blending program
@@ -100,11 +104,11 @@ if "%FIRSTCHAR%" == "/" (
     set EXTRAENBLENDOPTIONS=
   )
 ) else (
-  if %PARAMCOUNT% EQU 0 (
+  if !PARAMCOUNT! EQU 0 (
     rem call :PRINT_DEBUG Input file: %_TMP%
     set PROTOINNAME=%_TMP%
   )
-  if %PARAMCOUNT% EQU 1 (
+  if !PARAMCOUNT! EQU 1 (
     rem call :PRINT_DEBUG Setting PTO: %_TMP%
     set PTOTMPL=%_TMP%
   )
