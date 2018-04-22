@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 
 rem Script to stitch panoramic videos produced by Samsung Gear360.
 rem Could be adopted to use with other cameras after creating pto file
