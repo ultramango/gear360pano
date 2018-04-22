@@ -162,6 +162,8 @@ for %%f in (%PROTOINNAME%) do (
     "%HUGINPATH%/exiftool.exe" -s -s -s -Model !INNAME! > modelname.tmp
     set /p MODELNAME=<modelname.tmp
     del modelname.tmp
+    rem This is default
+    set LOCALPTOTMPL=%PTOTMPL_SM_C200%
     if "!PTOTMPL!" == "" (
       rem call :PRINT_DEBUG Detected model: !MODELNAME!
       if "!MODELNAME!" == "SM-C200" set LOCALPTOTMPL=%PTOTMPL_SM_C200%

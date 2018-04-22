@@ -2,12 +2,14 @@
 
 rem Test script for gear360pano.cmd
 
-set FFMPEGPATH=c:\Program Files\ffmpeg\bin
-set FFMPEGEXE="%FFMPEGPATH%\ffmpeg.exe"
+rem Install image magic in this path, don't forget to include legacy tools (convert)
+set IMGMAGPATH=C:\Program Files\ImageMagick
+set IMGMAGCONV=%IMGMAGPATH%\convert.exe
 set T=gear360pano.cmd
 set DEBUG=""
 rem This is used as return value
 set RETVAL=
+set EXITCODE=0
 
 goto MAIN
 
@@ -27,13 +29,11 @@ rem return (as RETVAL), filename
 :TEST_IMAGE
 set IMGSIZE=%1
 set FILENAME=%2
-set DURATION=1
-set FRAMERATE=1
-set FPS=1
+
 rem Default parameters
 if "%IMGSIZE%" == "" set IMGSIZE=7776x3888
-if "%FILENAME%" == "" set FILENAME=%TEMP%\testpano.jpeg
-%FFMPEGEXE% -loglevel quiet -y -f lavfi -i testsrc=duration=%DURATION%:size=%IMGSIZE%:rate=%FPS% %FILENAME%
+if "%FILENAME%" == "" set FILENAME=%TEMP%\testpano.jpg
+"%IMGMAGCONV%" -type TrueColor -size %IMGSIZE% pattern:checkerboard -auto-level %FILENAME%
 set RETVAL=%FILENAME%
 exit /b 0
 
@@ -47,7 +47,7 @@ set TESTCMD=%~1
 set TESTDESCR=%~2
 rem Optional, default: 0
 set EXPECTEDEXITCODE=%3
-set LOGOUTPUT=%TEMP%/cmdout.log
+set LOGOUTPUT=%TEMP%\cmdout.log
 
 if "%EXPECTEDEXITCODE%" == "" set EXPECTEDEXITCODE=0
 
@@ -91,6 +91,9 @@ exit /b 0
 
 :MAIN
 
+rem Image magick?
+if not exist "%IMGMAGCONV%" goto NOIMGMAG
+
 rem Simple help test
 call :EXEC_TEST "%T% /h" "Help test"
 
@@ -101,4 +104,11 @@ call :EXEC_TEST "%T% %IMAGE%"
 
 goto eof
 
+:NOIMGMAG
+echo ImageMagick not installed, download from: https://www.imagemagick.org
+echo Install in C:\Program Files\ImageMagick and tick legacy tools
+set EXITCODE=1
+goto eof
+
 :eof
+exit /b %EXITCODE%
