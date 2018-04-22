@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 
 rem This is a small script to stitch panorama images produced  by Samsung Gear360
 rem Could be adopted to use with other cameras after creating pto file (Hugin
@@ -36,6 +36,7 @@ rem Should we remove source file?
 set REMOVESRCFILE=no
 rem Debug enable ("yes")/disable
 set DEBUG=""
+set EXITCODE=0
 
 rem Process arguments
 set PARAMCOUNT=0
@@ -259,6 +260,7 @@ echo Hugin is not installed or installed in non-standard directory
 echo Download and install Hugin from: http://hugin.sourceforge.net/
 echo Was looking in: %HUGINPATH%
 echo and: %HUGINPATH32%
+set EXITCODE=1
 goto eof
 
 :NOBLEND
@@ -266,14 +268,17 @@ echo.
 echo Could not find requested blending program:
 echo %HUGINPATH%\%BLENDPROG%
 echo Please install missing software
+set EXITCODE=1
 goto eof
 
 :NONAERROR
 echo nona failed, panorama not created
+set EXITCODE=1
 goto eof
 
 :ENBLENDERROR
 echo enblend failed, panorama not created
+set EXITCODE=1
 goto eof
 
 rem Function to stich panorama, parameters:
@@ -352,10 +357,10 @@ del "%LOCALOUTNAME%_original"
 exit /b 0
 
 :PRINT_DEBUG
-
 if %DEBUG% == "yes" (
   echo DEBUG: %1 %2 %3 %4 %5 %6 %7 %8 %9
 )
-
 exit /b 0
+
 :eof
+exit /b %EXITCODE%
