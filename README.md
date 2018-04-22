@@ -9,8 +9,10 @@ generation 1 (SM-C200) and 2 (2017 or SM-R210).
 
 Latest Changes:
 
+- 2018-04-23: small fixes, updated Windows video stitching - should match
+Linux version now (may have bugs still), added tests for Windows scripts.
 - 2018-02-18: splitted scripts into Windows and Linux part (.cmd, .sh), updated
-pannellum library, fixed problem with xargs. Added support for 4096 (gen2?) videos.
+Pannellum library, fixed problem with xargs. Added support for 4096 (gen2?) videos.
 Fixed problem with bad output video length. Note: Windows version not tested.
 - 2017-10-04: added ```-p``` option for parallel video stitching (contribution by kwahoo2).
 On some machines it should greatly reduce video stitching time (ex. 33 s vs ~13 s). Use
@@ -18,7 +20,7 @@ with care, might freeze your machine. Added ```-r``` option for panorama process
 will remove source file (this used by video processing to save on disk space).
 - 2017-10-01: higher quality video output by default (override with ```--speed``` option), ability to
 set temporary directory for video, added 2k video support (contribution by durkie), few fixes, added
-tests for panorama and video (can be used as primitive performance mesaurement). Important: Linux
+tests for panorama and video (can be used as primitive performance measurement). Important: Linux
 changes only, Windows should, hopefully, follow later.
 - 2017-07-11: fixed video script to work with new panorama script, fix when run outside script directory
 (video script still might have problems), GPU used by default, ability to set temporary directory (not
