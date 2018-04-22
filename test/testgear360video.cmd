@@ -103,6 +103,11 @@ echo Test took: %totalsecs% s
 set RETVAL=
 exit /b 0
 
+rem Trick to create output filename (one with _pano)
+:ADDPANOTOFILENAME
+set RETVAL=%~n1_pano.mp4
+exit /b 0
+
 :MAIN
 
 rem Test suite version
@@ -115,6 +120,10 @@ rem Simple video test
 call :TEST_VIDEO
 set VIDEOFILE=%RETVAL%
 call :EXEC_TEST "%T% %VIDEOFILE%" "Simple video test"
+rem Check if panorama video has been created
+call :ADDPANOTOFILENAME %VIDEOFILE%
+set EXPECTEDVIDEO=html\data\%RETVAL%
+if not exist %EXPECTEDVIDEO% echo "Output video file %EXPECTEDVIDEO% does not exits"
 
 echo Done
 goto eof
