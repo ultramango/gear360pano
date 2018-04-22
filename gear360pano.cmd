@@ -1,6 +1,9 @@
 @echo off
 
 rem This is a small script to stitch panorama images produced  by Samsung Gear360
+rem Could be adopted to use with other cameras after creating pto file (Hugin
+rem template)
+rem
 rem https://github.com/ultramango/gear360pano
 
 rem http://stackoverflow.com/questions/673523/how-to-measure-execution-time-of-command-in-windows-command-line
@@ -29,6 +32,8 @@ set MULTIBLENDEXE=multiblend_x64.exe
 rem By default use gpu
 set EXTRANONAOPTIONS="-g"
 set EXTRAENBLENDOPTIONS="--gpu"
+rem Should we remove source file?
+set REMOVESRCFILE=no
 rem Debug enable ("yes")/disable
 set DEBUG=""
 
@@ -80,6 +85,10 @@ if "%FIRSTCHAR%" == "/" (
       set MYTEMPDIR=%2
     )
   )
+  if /i "!SWITCH!" == "r" (
+    rem call :PRINT_DEBUG Will remove source file(s)
+    set REMOVESRCFILE="yes"
+  )
   if /i "!SWITCH!" == "m" (
     rem call :PRINT_DEBUG Using multiblend as blending program
     set BLENDPROG=%MULTIBLENDEXE%
@@ -127,6 +136,7 @@ if "%CREATEGALLERY%" == "yes" if not "%OUTDIR%" == "html\data" (
   )
 )
 
+rem Loop over input files
 for %%f in (%PROTOINNAME%) do (
   set INNAME=%%f
   set OUTNAME=%OUTDIR%\%%~nf_pano.jpg
@@ -158,6 +168,11 @@ for %%f in (%PROTOINNAME%) do (
 
     echo Processing file: !INNAME!
     call :PROCESSPANORAMA !INNAME! !OUTNAME! !LOCALPTOTMPL!
+
+    if "%REMOVESRCFILE%" == "yes" (
+      rem call :PRINT_DEBUG Removing source file: !INNAME!
+      del !INNAME!
+    )
   )
 )
 
@@ -306,8 +321,8 @@ echo Setting EXIF data (exiftool)
 set IMG_WIDTH=7776
 set IMG_HEIGHT=3888
 "%HUGINPATH%/exiftool.exe" -ProjectionType=equirectangular ^
-                            -m ^
                             -q ^
+                            -m ^
                             -TagsFromFile "%LOCALINNAME%" ^
                             -exif:all ^
                             -ExifByteOrder=II ^
@@ -323,7 +338,8 @@ set IMG_HEIGHT=3888
                             --PreviewImage ^
                             --EncodingProcess ^
                             --YCbCrSubSampling ^
-                            --Compression "%LOCALOUTNAME%"
+                            --Compression ^
+                            "%LOCALOUTNAME%"
 if "%ERRORLEVEL%" EQU 1 echo Setting EXIF failed, ignoring
 
 rem There are problems with -delete_original in exiftool, manually remove the file
