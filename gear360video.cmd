@@ -15,7 +15,7 @@ set SCRIPTNAME=%0
 set SCRIPTPATH=%~dp0
 set FRAMESTEMPDIR=frames
 set STITCHEDTEMPDIR=frames_stitched
-set OUTDIR="%SCRIPTPATH%\html\data"
+set OUTDIR=%SCRIPTPATH%\html\data
 set FFMPEGPATH=c:\Program Files\ffmpeg\bin
 set FFMPEGQUALITYDEC=-q:v 2
 set FFMPEGQUALITYENC=-c:v libx265 -crf 18
@@ -147,27 +147,22 @@ echo "Stitching frames..."
 call "%SCRIPTPATH%\gear360pano.cmd" /m /o "%STITCHEDTEMP%" "%FRAMESTEMP%\*.jpg" "%PTOTMPL%"
 
 echo "Reencoding video..."
-"%FFMPEGPATH%\ffmpeg.exe" -y -f image2 -i %STITCHEDTEMP%\%IMAGETMPLENC% -r %VIDFPS% -s %VIDSIZE% %FFMPEGQUALITYENC% %STITCHEDTEMP%\%TMPVIDEO%
+"%FFMPEGPATH%\ffmpeg.exe" -y -f image2 -i %STITCHEDTEMP%\%IMAGETMPLENC% -r %VIDFPS% -s %VIDSIZE% %FFMPEGQUALITYENC% %OUTVIDNAME%
 if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
 rem Check if there's audio
 set TMPHASAUDIO=%MYTEMPDIR%\hasaudio.tmp
-"%FFMPEGPATH%\ffprobe.exe" -v error ^
-                          -of default=nw=1:nk=1 ^
-                          -select_streams a ^
-                          -show_entries stream=codec_type ^
-                          %VIDINNAME% > %TMPHASAUDIO%
-
-set HASAUDIO=<%TMPHASAUDIO%
+"%FFMPEGPATH%\ffprobe.exe" -v error -of default=nw=1:nk=1 -select_streams a -show_entries stream=codec_type %VIDINNAME% > %TMPHASAUDIO%
+set /p HASAUDIO=<%TMPHASAUDIO%
 del %TMPHASAUDIO%
 
 if "%HASAUDIO%" neq "" (
   echo "Extracting audio..."
-  "%FFMPEGPATH%\ffmpeg.exe" -y -i %1 -vn -acodec copy %STITCHEDTEMP%\%TMPAUDIO%
+  "%FFMPEGPATH%\ffmpeg.exe" -y -i %VIDINNAME% -vn -acodec copy %STITCHEDTEMP%\%TMPAUDIO%
   if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 
   echo "Merging audio..."
-  "%FFMPEGPATH%\ffmpeg.exe" -y -i %STITCHEDTEMP%\%TMPVIDEO% -i %STITCHEDTEMP%\%TMPAUDIO% -c:v copy -c:a aac -strict experimental %OUTVIDNAME%
+  "%FFMPEGPATH%\ffmpeg.exe" -y -i %OUTVIDNAME% -i %STITCHEDTEMP%\%TMPAUDIO% -c:v copy -c:a aac -strict experimental %OUTVIDNAME%
   if %ERRORLEVEL% EQU 1 GOTO FFMPEGERROR
 )
 
@@ -180,7 +175,7 @@ goto eof
 
 rem Filename extraction works only with %1, we need this workaround
 :MAKEOUTNAME
-set OUTVIDNAME="%~n1_pano.mp4"
+set OUTVIDNAME=%OUTDIR%\%~n1_pano.mp4
 exit /b 0
 
 :NOARGS
