@@ -90,7 +90,6 @@ if "%FIRSTCHAR%" == "/" (
     )
   )
   if /i "!SWITCH!" == "r" (
-    echo "Mark 7"
     rem call :PRINT_DEBUG Will remove source file(s)
     set REMOVESRCFILE=yes
   )
