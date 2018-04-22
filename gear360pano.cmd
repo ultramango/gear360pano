@@ -252,6 +252,7 @@ goto eof
 :NOHUGIN
 echo.
 echo Hugin is not installed or installed in non-standard directory
+echo Download and install Hugin from: http://hugin.sourceforge.net/
 echo Was looking in: %HUGINPATH%
 echo and: %HUGINPATH32%
 goto eof
