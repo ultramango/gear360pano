@@ -85,7 +85,7 @@ Finally: clone or download zip of this project then unpack it somewhere.
 
 One liner to install it in current directory under ```gear360pano``` (no ```.git``` dir):
 
-    mkdir -p gear360pano && wget -qO- https://github.com/ultramango/gear360pano/archive/master.zip | bsdtar -xvf- -C gear360pano -s'|[^/]*/||' > /dev/null 2>&1 && find gear360pano -iname "*.cmd" -exec chmod a+x {} \; && echo '\nDone'
+    mkdir -p gear360pano && wget -qO- https://github.com/ultramango/gear360pano/archive/master.zip | bsdtar -xvf- -C gear360pano -s'|[^/]*/||' > /dev/null 2>&1 && find gear360pano -iname "*.sh" -exec chmod a+x {} \; && echo '\nDone'
 
 ### Windows
 
