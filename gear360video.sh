@@ -121,6 +121,7 @@ check_preconditions() {
   # http://stackoverflow.com/questions/592620/check-if-a-program-exists-from-a-bash-script
   local error=0
 
+  type nona >/dev/null 2>&1 || { echo >&2 "Hugin required but it is not installed. Aborting."; exit 1; }
   type ffmpeg >/dev/null 2>&1 || { echo >&2 "ffmpeg required but it's not installed. Will abort."; error=1; }
   type multiblend >/dev/null 2>&1 || { echo >&2 "multiblend required but it's not installed. Will abort."; error=1; }
 

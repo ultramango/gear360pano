@@ -17,6 +17,8 @@ set FRAMESTEMPDIR=frames
 set STITCHEDTEMPDIR=frames_stitched
 set OUTDIR=%SCRIPTPATH%\html\data
 set FFMPEGPATH=c:\Program Files\ffmpeg\bin
+set HUGINPATH=C:\Program Files\Hugin\bin
+set HUGINPATH32=C:\Program Files (x86)\Hugin\bin
 set FFMPEGQUALITYDEC=-q:v 2
 set FFMPEGQUALITYENC=-c:v libx265 -crf 18
 rem %% is an escape character (note: this will fail on wine's cmd.exe)
@@ -93,10 +95,13 @@ call :MAKEOUTNAME %VIDINNAME%
 
 :SETNAMEOK
 rem Check ffmpeg...
-if exist "%FFMPEGPATH%/ffmpeg.exe" goto FFMPEGOK
-goto NOFFMPEG
+if not exist "%FFMPEGPATH%/ffmpeg.exe" goto NOFFMPEG
+rem Check Hugin...
+if exist "%HUGINPATH%/nona.exe" goto HUGINOK
+rem 64 bits not found? Check x86
+if not exist "%HUGINPATH32%/nona.exe" goto NOHUGIN
 
-:FFMPEGOK
+:HUGINOK
 
 rem Temporary directory set?
 if "%MYTEMPDIR%" == "" set MYTEMPDIR=%TEMP%
@@ -104,8 +109,8 @@ if "%MYTEMPDIR%" == "" set MYTEMPDIR=%TEMP%
 rem Create temporary directories
 set FRAMESTEMP=%MYTEMPDIR%\%FRAMESTEMPDIR%
 set STITCHEDTEMP=%MYTEMPDIR%\%STITCHEDTEMPDIR%
-mkdir %FRAMESTEMP%
-mkdir %STITCHEDTEMP%
+if not exist "%FRAMESTEMP%" mkdir %FRAMESTEMP%
+if not exist "%STITCHEDTEMP%" mkdir %STITCHEDTEMP%
 
 rem Execute commands (as simple as it is)
 echo "Converting video to images..."
@@ -203,6 +208,12 @@ goto eof
 :NOFFMPEG
 echo ffmpeg was not found in %FFMPEGPATH%, download from: https://ffmpeg.zeranoe.com/builds/
 echo and unpack to program files directory (name it ffmpeg)
+goto eof
+
+:NOHUGIN
+echo Hugin was not found in %HUGINPATH% nor %HUGINPATH32%,
+echo download from: https://http://hugin.sourceforge.net/
+echo and install in default directory
 goto eof
 
 :FFMPEGERROR

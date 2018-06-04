@@ -9,6 +9,7 @@ generation 1 (SM-C200) and 2 (2017 or SM-R210).
 
 Latest Changes:
 
+- 2018-06-04: added check for Hugin for video script.
 - 2018-04-23: small fixes, updated Windows video stitching - should match
 Linux version now (may have bugs still), added tests for Windows scripts.
 - 2018-02-18: splitted scripts into Windows and Linux part (.cmd, .sh), updated
