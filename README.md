@@ -9,6 +9,8 @@ generation 1 (SM-C200) and 2 (2017 or SM-R210).
 
 Latest Changes:
 
+- 2018-06-14: fixed problem with EXIF data for generation 2 Gear360 that prevented Google
+from recognising stitched image as panorama.
 - 2018-06-04: added check for Hugin for video script.
 - 2018-04-23: small fixes, updated Windows video stitching - should match
 Linux version now (may have bugs still), added tests for Windows scripts.

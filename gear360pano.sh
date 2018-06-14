@@ -126,9 +126,8 @@ process_panorama() {
 
   # TODO: not sure about the tag exclusion list...
   # Note: there's no check for exiftool as it is included with Hugin
-  IMG_SIZE=($(exiftool -s -s -s -ImageWidth -ImageHeight $1 | tr '\n' ' '))
-  IMG_WIDTH=${IMG_SIZE[1]}
-  IMG_HEIGHT=${IMG_SIZE[2]}
+  IMG_WIDTH=$(exiftool -s -s -s -ImageWidth $1)
+  IMG_HEIGHT=$(exiftool -s -s -s -ImageHeight $1)
   echo "Setting EXIF data (exiftool)"
   run_command "exiftool" "-ProjectionType=equirectangular" \
               "-q" \
