@@ -8,7 +8,9 @@
 
 
 # http://stackoverflow.com/questions/59895/can-a-bash-script-tell-which-directory-it-is-stored-in
-DIR=$(dirname `which $0`)
+WHICH=`which $0`
+DIR=$(dirname `readlink -f $WHICH`)
+
 SCRIPTNAME=$0
 GALLERYDIR="html"
 OUTDIR="$DIR/$GALLERYDIR/data"
