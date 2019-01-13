@@ -173,7 +173,7 @@ for %%f in (%PROTOINNAME%) do (
     )
 
     echo Processing file: !INNAME!
-    call :PROCESSPANORAMA !INNAME! !OUTNAME! !LOCALPTOTMPL!
+    call :PROCESSPANORAMA "!INNAME!" "!OUTNAME!" !LOCALPTOTMPL!
 
     if "%REMOVESRCFILE%" == "yes" (
       rem call :PRINT_DEBUG Removing source file: !INNAME!
